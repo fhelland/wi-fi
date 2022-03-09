@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>File Manager</title>
+  <style>
+    body {
+      max-width: 950px;
+      margin-left: auto;
+      margin-right: auto;
+      font-family: tahoma, verdana, arial, helvetica, sans;
+      transition: background-color 1s ease;
+      background-color: whitesmoke;
+      font-size: 9pt;
+      color: #777;
+    }
+    
+    a {
+      text-decoration: none;
+      color: #357;
+      border: 1px solid transparent;
+      padding: 0 0.1em;
+    }
+    
+    .topnav {
+      overflow: hidden;
+      /*background-color: #0072c6;*/
+      background-color: rgb(0, 119, 190);
+    }
+    
+    .topnav a {
+      float: left;
+      color: #f2f2f2;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+      font-size: 17px;
+    }
+    
+    .topnav a:hover {
+      background-color: rgb(49, 151, 196);
+      ;
+      color: black;
+    }
+    
+    .topnav a.active {
+      background-color: #363f6b;
+      color: white;
+    }
+    
+    .header {
+      padding: 0;
+      margin: 10px;
+      width: 100%;
+      height: 100px;
+    }
+    
+    .header td:first-child {
+      text-align: left;
+    }
+    
+    .header td:last-child {
+      text-align: right;
+      padding-right: 10px;
+    }
+    
+    #top {
+      font-size: 13pt;
+      color: #777;
+      margin: 5px;
+    }
+    
+    #top a {
+      text-decoration: none;
+      color: #999;
+      border: 2px solid transparent;
+    }
+    
+    #top a:hover {
+      background-color: rgb(220, 220, 220);
+    }
+    
+    #files img {
+      vertical-align: middle;
+      border-style: none;
+      margin-right: 10px;
+    }
+    
+    #files a {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #files a:hover {
+      color: #47c;
+    }
+    
+    #files {
+      clear: both;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    #files th {
+      padding: 0.9em 1em;
+      background: rgb(49, 151, 196);
+      text-align: center;
+      color: #fff;
+    }
+    
+    #files th:nth-child(2),
+    th:nth-child(3) {
+      text-align: right;
+    }
+    
+    #files tr th[data-sort="desc"]::after {
+      content: " \25BC";
+    }
+    
+    #files tr th[data-sort="asc"]::after {
+      content: " \25B2";
+    }
+    
+    #files th:nth-child(1),
+    th:nth-child(3),
+    th:nth-child(4) {
+      cursor: pointer;
+    }
+    
+    #files tr:hover {
+      background: rgb(220, 220, 220);
+    }
+    
+    #files tr td {
+      vertical-align: middle;
+      text-align: right;
+      border-bottom: 1px solid #ddd;
+      height: 24px;
+    }
+    
+    #files tr td:first-child {
+      text-align: left;
+      line-height: 24px;
+    }
+    
+    #files tr td:last-child {
+      text-align: center;
+    }
+    
+    .btn-group {
+      margin: 5px 10px;
+    }
+    /* Clear floats (clearfix hack) */
+    
+    .btn-group:after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+    
+    .btn-group button {
+      height: 30px;
+      width: 110px;
+    }
+    
+    button {
+      background-color: #99ccff;
+      color: #444;
+      font-size: 10pt;
+      border: transparent;
+      text-decoration: none;
+      border-radius: 1px;
+      vertical-align: middle;
+      cursor: pointer;
+      margin: 4px;
+    }
+    
+    button:hover {
+      background-color: #3399ff;
+    }
+    
+    button:active {
+      background-color: #3473b2;
+      color: #ddd;
+    }
+    
+    button:disabled {
+      background-color: #dddddd;
+      color: #ccc;
+      cursor: default;
+    }
+    
+    hr {
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      border-top: 1px solid lightgray;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .custom-file-upload {
+      height: 30px;
+      width: 110px;
+      font-size: 10pt;
+      display: inline-block;
+      cursor: pointer;
+      background-color: #99ccff;
+      color: #444;
+      border-radius: 1px;
+      vertical-align: middle;
+      cursor: pointer;
+      text-align: center;
+      line-height: 28px;
+      margin: 4px;
+    }
+    
+    .custom-file-upload:hover {
+      background-color: #3399ff;
+    }
+    
+    .custom-file-upload:active {
+      color: #ddd;
+      background: #3473b2;
+    }
+    
+    input:disabled+label {
+      background-color: #dddddd;
+      color: #ccc;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    /* Full-width input fields */
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 20px;
+      margin: 8px 0;
+      display: inline-block;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    /* Extra styles for the cancel button */
+    
+    .submit-button {
+      float: right;
+      width: auto;
+      padding: 6px 30px;
+      margin-right: 16px;
+      margin-bottom: 10px;
+    }
+    /* Center the image and position the close button */
+    
+    .container {
+      padding: 16px;
+    }
+    /* The Modal (background) */
+    
+    .modal {
+      display: none;
+      /* Hidden by default */
+      position: fixed;
+      /* Stay in place */
+      z-index: 1;
+      /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%;
+      /* Full width */
+      height: 100%;
+      /* Full height */
+      overflow: auto;
+      /* Enable scroll if needed */
+      background-color: rgb(0, 0, 0);
+      /* Fallback color */
+      background-color: rgba(0, 0, 0, 0.3);
+      /* Black w/ opacity */
+      padding-top: 60px;
+    }
+    /* Modal Content/Box */
+    
+    .modal-content {
+      overflow: hidden;
+      width: 400px;
+      height: auto;
+      background-color: #fefefe;
+      margin: 5% auto 15% auto;
+      /* 5% from the top, 15% from the bottom and centered */
+      border: 1px solid #888;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    }
+    /* The Close Button (x) */
+    
+    .close {
+      margin: 14px;
+      float: right;
+      color: #000;
+      font-size: 28px;
+      padding: 0 10px;
+    }
+    
+    .close:hover,
+    .close:focus {
+      background-color: rgb(220, 220, 220);
+      padding: 0 10px;
+      cursor: pointer;
+    }
+    /* Add Zoom Animation */
+    
+    .animate {
+      -webkit-animation: animatezoom 0.2s;
+      animation: animatezoom 0.2s;
+    }
+    
+    @-webkit-keyframes animatezoom {
+      from {
+        -webkit-transform: scale(0);
+      }
+      to {
+        -webkit-transform: scale(1);
+      }
+    }
+    
+    @keyframes animatezoom {
+      from {
+        transform: scale(0);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+    /* Change styles for span and cancel button on extra small screens */
+    
+    @media screen and (max-width: 300px) {
+      .cancelbtn {
+        width: 100%;
+      }
+    }
+    
+    .loader-1 {
+      margin-left: 1em;
+      margin-right: 1em;
+      width: 16px;
+      height: 16px;
+      border: 3.5px solid rgb(81, 81, 82);
+      border-bottom-color: #a1a0a0;
+      border-radius: 50%;
+      display: none;
+      -webkit-animation: rotation 1.5s linear infinite;
+      animation: rotation 1.5s linear infinite;
+      vertical-align: middle;
+    }
+    /* keyFrames */
+    
+    @-webkit-keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    
+    #files input[type="checkbox"] {
+      width: 1.0rem;
+      height: 1.0rem;
+      border: 1px solid hsl(0, 0%, 85%);
+      border-radius: 1px;
+      cursor: pointer;
+    }
+    
+    #files td label {
+      display: table-cell;
+      vertical-align: middle;
+      width: 60px;
+      height: 25px;
+    }
+    
+    .footer {
+      margin: 5px;
+      padding: 5px;
+    }
+  </style>
+</head>
+
+<body onload="sort_names_asc();">
+  <div class="topnav">
+    <a class="active" href="/index.html">File Manager</a>
+    <a href="/?upgrade">Firmware upgrade</a>
+    <a href="/?wifi">Wi-Fi</a>
+  </div>
+
+  <div id="create-folder" class="modal">
+    <div class="modal-content animate">
+      <span onclick="document.getElementById('create-folder').style.display='none'" class="close" title="Close">&times;</span>
+      <div class="container">
+        <h2>Folder</h2>
+        <input id="folderpath" type="text" placeholder="Enter your folder name..." />
+        <p id="dir_error" style="color: red"></p>
+      </div>
+      <button type="button" onclick="createdir()" class="submit-button">
+        Create
+      </button>
+    </div>
+  </div>
+
+  <div id="delete" class="modal">
+    <div class="modal-content animate">
+      <span onclick="document.getElementById('delete').style.display='none'" class="close" title="Close">&times;</span>
+      <div class="container">
+        <h2>Delete?</h2>
+        <p id=deleteText></p>
+        <p id="remove_item" style="color: black; font-weight: bold"></p>
+      </div>
+      <button type="button" id="deleteSubmit" onclick="deleteSelected()" class="submit-button">
+          Confirm
+        </button>
+    </div>
+  </div>
+
+  <table class="header" border="0">
+    <tr>
+      <td>
+        <h1 style="color: #47c">SD Card File Manager</h1>
+      </td>
+      <td>
+        <div id="logo">
+          <a href="/"><img src="/logo.png" alt="Logo" style="width: 200px; height: auto" /></a>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="btn-group">
+    <button id="createdir" onclick="openCreate()">
+        Create folder
+      </button>
+    <input id="newfile" type="file" onchange="upload()" />
+    <label for="newfile" type="button" class="custom-file-upload">Upload file</label>
+    <button id="delete" onclick="GetSelected()" style="float: right;">Delete</button>
+    <button id="download" onclick="do_dl();" style="float: right;">Download</button>
+    <span class="loader-1"></span>
+    <span id="progress"></span>
+    <span id="status"></span>
+    <p id="error"></p>
+  </div>
+  <hr />
+
+  <script>
+    var modal = document.getElementById("create-folder");
+    var modal2 = document.getElementById("delete");
+    var input = document.getElementById("folderpath");
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+      if (event.target == modal || event.target == modal2) {
+        modal.style.display = "none";
+        modal2.style.display = "none";
+      }
+    };
+    // When the user clicks esc button, close it
+    document.addEventListener("keyup", function(e) {
+      if (e.keyCode == 27) {
+        e.preventDefault();
+        e.stopPropagation();
+        modal.style.display = "none";
+        modal2.style.display = "none";
+      }
+    });
+    // When the user clicks enter button, folder create button is pressed
+    input.addEventListener("keyup", function(event) {
+      if (event.keyCode === 13) {
+        event.preventDefault();
+        document.getElementsByClassName("submit-button")[0].click();
+      }
+    });
+    // function to open create folder pop-up
+    function openCreate() {
+      document.getElementById("create-folder").style.display = "block";
+      document.getElementById("folderpath").value = "";
+      document.getElementById("dir_error").innerHTML = "";
+      document.getElementById("folderpath").focus();
+    }
+    // function to open delete item pop-up
+    function deletefile(path) {
+      document.getElementById("delete").style.display = "block";
+      document.getElementById("remove_item").innerHTML = path;
+      document.getElementsByClassName("submit-button")[1].focus();
+    }
+
+
+    function toggle(source) {
+      var grid = document.getElementById("files");
+      var tBody = grid.getElementsByTagName('tbody')[0];
+      //Reference the CheckBoxes in Table.
+      var checkBoxes = tBody.getElementsByTagName("INPUT");
+      for (var i = 0, n = checkBoxes.length; i < n; i++) {
+        checkBoxes[i].checked = source.checked;
+      }
+    }
+
+    function GetSelected() {
+      document.getElementById("error").innerHTML = "";
+      //Reference the Table.
+      var grid = document.getElementById("files");
+      var tBody = grid.getElementsByTagName('tbody')[0];
+      //Reference the CheckBoxes in Table.
+      var checkBoxes = tBody.getElementsByTagName("INPUT");
+      var message = "";
+      //alert(message);
+      //Loop through the CheckBoxes.
+      var n = 0;
+      for (i = 0; i < checkBoxes.length; i++) {
+        if (checkBoxes[i].checked) {
+          message += checkBoxes[i].name;
+          message += "<br>";
+          n++;
+        }
+      }
+      if (message) {
+        //Display selected Row data in Alert Box.
+        document.getElementById("delete").style.display = "block";
+        if (n == 1) {
+          document.getElementById("deleteText").innerHTML = "Are you sure you want to delete " + "<b>" + message + "</b>";
+        } else if (n > 1) {
+          document.getElementById("deleteText").innerHTML = "Are you sure you want to delete " + "<b>" + n + " items" + "</b>";
+        }
+
+      } else {
+        document.getElementById("error").innerHTML = "Nothing selected";
+      }
+
+    }
+
+    function deleteSelected() {
+      //Reference the Table.
+      var grid = document.getElementById("files");
+      var tBody = grid.getElementsByTagName('tbody')[0];
+      //Reference the CheckBoxes in Table.
+      var checkBoxes = tBody.getElementsByTagName("INPUT");
+      var files = [];
+
+      var uri_path = "/delete" + window.location.pathname;
+      document.getElementById("createdir").disabled = true;
+      document.getElementById("newfile").disabled = true;
+      document.getElementById("delete").disabled = true;
+      document.getElementById("deleteSubmit").disabled = true;
+
+      for (i = 0; i < checkBoxes.length; i++) {
+        if (checkBoxes[i].checked) {
+          //var row = checkBoxes[i].parentNode.parentNode;
+          files.push(checkBoxes[i].value);
+        }
+      }
+      var data = JSON.stringify({
+        files
+      });
+
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+        if (xhttp.readyState == 4) {
+          if (xhttp.status == 200) {
+            document.open();
+            document.write(xhttp.responseText);
+            document.close();
+          } else if (xhttp.status == 0) {
+            alert("Server closed the connection abruptly!");
+            location.reload();
+          } else {
+            //alert(xhttp.status + " Error!\n" + xhttp.responseText);
+            location.reload();
+            document.getElementById("status").innerHTML = xhttp.responseText;
+
+          }
+        }
+      };
+      document.getElementById("remove_item").innerHTML = "Deleting, please wait...";
+      xhttp.open("POST", uri_path, true);
+      // Set the request header i.e. which type of content you are sending
+      //xhttp.setRequestHeader("Content-Type", "application/json");
+      xhttp.send(data);
+    }
+
+    /* function setpath() {
+        var default_path = document.getElementById("newfile").files[0].name;
+        document.getElementById("filepath").value = default_path;
+      }
+*/
+    function upload() {
+      var file = document.getElementById("newfile").files[0];
+      var upload_path = "/upload" + window.location.pathname + file.name;
+      //var fileInput = document.getElementById("newfile").files;
+      //document.getElementById("progress").innerHTML = filePath + " next "+ fileInput[0];
+      /* Max size of an individual file. Make sure this
+       * value is same as that set in file_server.c */
+      var MAX_FILE_SIZE = 200 * 1024 * 1024;
+      var MAX_FILE_SIZE_STR = "200MB!";
+
+
+      if (file.size > MAX_FILE_SIZE) {
+        alert("File size must be less than " + MAX_FILE_SIZE_STR);
+      } else {
+
+        document.getElementById("status").innerHTML =
+          "Uploading file: " + file.name;
+        document.getElementById("createdir").disabled = true;
+        document.getElementById("newfile").disabled = true;
+
+        //var file = fileInput[0];
+        var xhttp = new XMLHttpRequest();
+
+        xhttp.upload.addEventListener(
+          "progress",
+          function(e) {
+            var pc = parseInt((e.loaded / e.total) * 100);
+            document.getElementById("progress").innerHTML = pc + " %";
+          },
+          false
+        );
+
+        xhttp.onreadystatechange = function() {
+          if (xhttp.readyState == 4) {
+            document.getElementsByClassName("loader-1")[0].style.display =
+              "none";
+            if (xhttp.status == 200) {
+              document.open();
+              document.write(xhttp.responseText);
+              document.close();
+            } else if (xhttp.status == 0) {
+              alert("Server closed the connection abruptly!");
+              location.reload();
+            } else {
+              alert(xhttp.status + " Error!\n" + xhttp.responseText);
+              location.reload();
+            }
+          }
+        };
+        document.getElementsByClassName("loader-1")[0].style.display = "inline-block";
+        xhttp.open("POST", upload_path, true);
+        xhttp.send(file);
+      }
+    }
+
+    function createdir() {
+      var folderPath = document.getElementById("folderpath").value;
+      var format = /[<>\/:\"\\|?*&+']/;
+      if (folderPath == "") {
+        document.getElementById("dir_error").innerHTML = "Empty foldername!";
+      } else if (format.test(folderPath)) {
+        document.getElementById("dir_error").innerHTML =
+          "The following characters are not allowed: \\ / : * ? \" < > | & ' +";
+      } else {
+        var uri_path = "/dir" + window.location.pathname + folderPath;
+
+        document.getElementById("createdir").disabled = true;
+        document.getElementById("newfile").disabled = true;
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (xhttp.readyState == 4) {
+            if (xhttp.status == 200) {
+              document.open();
+              document.write(xhttp.responseText);
+              document.close();
+            } else if (xhttp.status == 0) {
+              alert("Server closed the connection abruptly!");
+              location.reload();
+            } else {
+              alert(xhttp.status + " Error!\n" + xhttp.responseText);
+              location.reload();
+            }
+          }
+        };
+        xhttp.open("POST", uri_path, true);
+        xhttp.send(" ");
+      }
+    }
+
+    function sortTableRowsByColumn(table, columnIndex, ascending) {
+      const rows = Array.from(table.querySelectorAll(":scope > tbody > tr")); //convert table to array
+      rows.sort((x, y) => {
+        //sort using array.prototype.sort with custom compare function
+        const xValue =
+          x.cells[columnIndex].getAttribute("data-sort") ||
+          x.cells[columnIndex].textContent;
+        const yValue =
+          y.cells[columnIndex].getAttribute("data-sort") ||
+          y.cells[columnIndex].textContent;
+        const aValue = x.cells[1].textContent; //data-sort attribute contains raw values for size in bytes
+        const bValue = y.cells[1].textContent;
+        var direction = -1;
+        if (ascending) direction = 1;
+        var dir = direction * aValue.localeCompare(bValue); // compare file vs directory.
+        if (dir > 0) {
+          return dir;
+        } else if (dir == 0) {
+          var logic = isNaN(xValue - yValue) ?
+            xValue.localeCompare(yValue) :
+            xValue - yValue;
+          return logic * direction;
+        }
+      });
+
+      const fragment = new DocumentFragment(); //rebuild table from sorted array
+      for (let row of rows) {
+        fragment.appendChild(row);
+      }
+      table.tBodies[0].appendChild(fragment);
+    }
+
+    function onColumnHeaderClicked(ev) {
+      const th = ev.currentTarget;
+      const table = th.closest("table");
+      const thIndex = Array.from(th.parentElement.children).indexOf(th);
+      const ascending = !("sort" in th.dataset) || th.dataset.sort != "asc";
+
+      sortTableRowsByColumn(table, thIndex, ascending);
+
+      const allTh = table.querySelectorAll(":scope > thead > tr > th");
+      for (let th2 of allTh) {
+        delete th2.dataset["sort"];
+      }
+      th.dataset["sort"] = ascending ? "asc" : "desc";
+    }
+
+    function sort_names_asc() {
+      var table = document.getElementById("files"); // This have to be the ID of your table, not the tag
+      var tr = table.getElementsByTagName("tr")[0];
+      var th = tr.getElementsByTagName("th")[0];
+
+      const ascending = 1; //!("sort" in th.dataset) || th.dataset.sort != "asc";
+
+      sortTableRowsByColumn(table, 0, ascending);
+
+      const allTh = table.querySelectorAll(":scope > thead > tr > th");
+      for (let th2 of allTh) {
+        delete th2.dataset["sort"];
+      }
+      th.dataset["sort"] = ascending ? "asc" : "desc";
+    }
+
+    /**
+     * Download a list of files.
+     * @author speedplane
+     */
+    function download_files(files) {
+      function download_next(i) {
+        if (i >= files.length) {
+          return;
+        }
+        var a = document.createElement('a');
+        a.href = files[i].download;
+        a.target = '_parent';
+        // Use a.download if available, it prevents plugins from opening.
+        if ('download' in a) {
+          a.download = files[i].filename;
+        }
+        // Add a to the doc for click to work.
+        (document.body || document.documentElement).appendChild(a);
+        if (a.click) {
+          a.click(); // The click method is supported by most browsers.
+        } else {
+          $(a).click(); // Backup using jquery
+        }
+
+        // Delete the temporary link.
+        a.parentNode.removeChild(a);
+        // Download the next file with a small timeout. The timeout is necessary
+        // for IE, which will otherwise only download the first file.
+        setTimeout(function() {
+          download_next(i + 1);
+        }, 500);
+      }
+      // Initiate the first download.
+      download_next(0);
+    }
+
+    function do_dl() {
+      document.getElementById("error").innerHTML = "";
+      //Reference the Table.
+      var grid = document.getElementById("files");
+      var tBody = grid.getElementsByTagName('tbody')[0];
+
+      //Reference the CheckBoxes in Table.
+      var checkBoxes = tBody.getElementsByTagName("INPUT");
+      var selectedFiles = [];
+      //alert(message);
+      //Loop through the CheckBoxes.
+      var n = 0;
+      for (i = 0; i < checkBoxes.length; i++) {
+        if (checkBoxes[i].checked) {
+          if (grid.rows[i + 1].cells[1].textContent == "file") {
+            //console.log(grid.rows[i + 1].cells[1].textContent);
+            selectedFiles.push({
+              download: checkBoxes[i].value,
+              filename: checkBoxes[i].name
+            });
+          } else {
+            checkBoxes[i].checked = false;
+            checkBoxes[i].parentNode.parentNode.parentNode.style.backgroundColor = "";
+          }
+        }
+      }
+      download_files(selectedFiles);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var grid = document.getElementById("files");
+      var tBody = grid.getElementsByTagName('tbody')[0];
+      //Reference the CheckBoxes in Table.
+      var checkboxes = tBody.querySelectorAll("input[type=checkbox]");
+      // Use Array.forEach to add an event listener to each checkbox.
+      for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].type == 'checkbox') {
+          checkboxes[i].checked = false;
+        }
+      }
+      checkboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+          if (checkbox.checked) {
+            //console.log(checkbox.parentNode.parentNode.parentNode);
+            checkbox.parentNode.parentNode.parentNode.style.backgroundColor = "#ddc";
+          } else {
+            checkbox.parentNode.parentNode.parentNode.style.backgroundColor = "";
+            //console.log(checkbox.name + " not checked");
+          }
+
+        })
+      });
+    });
+  </script>

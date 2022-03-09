@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System</title>
+    <style>
+        .topnav {
+            overflow: hidden;
+            background-color: rgb(0, 119, 190);
+        }
+        
+        .topnav a {
+            float: left;
+            color: #f2f2f2;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+        
+        .topnav a:hover {
+            background-color: rgb(49, 151, 196);
+            color: black;
+        }
+        
+        .topnav a.active {
+            background-color: #363f6b;
+            color: white;
+        }
+        
+        .header {
+            padding: 0;
+            margin: 10px;
+            width: 100%;
+            height: 100px;
+        }
+        
+        .header td:first-child {
+            text-align: left;
+        }
+        
+        .header td:last-child {
+            text-align: right;
+            padding-right: 10px;
+        }
+        
+        button {
+            color: #444;
+            font-size: 10pt;
+            padding: 0.2em 1.1em;
+            border: transparent;
+            text-decoration: none;
+            border-radius: 0.1em;
+            vertical-align: middle;
+            cursor: pointer;
+            /*margin: 4px;*/
+            text-align: center;
+            height: 30px;
+            width: 110px;
+            background-color: #99ccff;
+        }
+        
+        body {
+            max-width: 950px;
+            margin-left: auto;
+            margin-right: auto;
+            font-family: tahoma, verdana, arial, helvetica, sans;
+            transition: background-color 1s ease;
+            background-color: whitesmoke;
+            font-size: 9pt;
+            color: #777;
+        }
+        
+        a {
+            text-decoration: none;
+            color: #357;
+            border: 1px solid transparent;
+            padding: 0 0.1em;
+        }
+        
+        #top a {
+            text-decoration: none;
+            color: #999;
+            border: 2px solid transparent;
+        }
+        
+        #top a:hover {
+            background-color: #eee;
+        }
+        
+        table {
+            border-collapse: collapse;
+        }
+        
+        .btn-group {
+            margin: 5px 10px;
+        }
+        
+        .btn-group button {
+            text-align: center;
+            height: 30px;
+            width: 110px;
+        }
+        
+        button:hover {
+            background-color: #3399ff;
+        }
+        
+        button:active {
+            background-color: #3473b2;
+            color: #ddd;
+        }
+        
+        button:disabled {
+            background-color: #dddddd;
+            color: #ccc;
+            cursor: default;
+        }
+        
+        hr {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            border-top: 1px solid #bbb;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .firmwareID {
+            margin: 20px;
+        }
+        
+        .custom-file-upload {
+            height: 30px;
+            width: 110px;
+            font-size: 10pt;
+            display: inline-block;
+            cursor: pointer;
+            background-color: #99ccff;
+            color: #444;
+            border-radius: 0.1em;
+            vertical-align: middle;
+            cursor: pointer;
+            text-align: center;
+            line-height: 28px;
+        }
+        
+        .custom-file-upload:hover {
+            background-color: #3399ff;
+        }
+        
+        .custom-file-upload:active {
+            color: #ddd;
+            background: #3473b2;
+        }
+        
+        input:disabled+label {
+            background-color: #dddddd;
+            color: #ccc;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        /* Full-width input fields */
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        /* Extra styles for the button */
+        
+        .submit-button {
+            float: right;
+            width: auto;
+            padding: 6px 30px;
+            margin-right: 16px;
+            margin-bottom: 10px;
+        }
+        /* Center the image and position the close button */
+        
+        .container {
+            padding: 16px;
+        }
+        /* The Modal (background) */
+        
+        .modal {
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            /* Stay in place */
+            z-index: 1;
+            /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            /* Full width */
+            height: 100%;
+            /* Full height */
+            overflow: auto;
+            /* Enable scroll if needed */
+            background-color: rgb(0, 0, 0);
+            /* Fallback color */
+            background-color: rgba(0, 0, 0, 0.3);
+            /* Black w/ opacity */
+            padding-top: 60px;
+        }
+        /* Modal Content/Box */
+        
+        .modal-content {
+            overflow: hidden;
+            width: 400px;
+            height: auto;
+            background-color: #fefefe;
+            margin: 5% auto 15% auto;
+            /* 5% from the top, 15% from the bottom and centered */
+            border: 1px solid #888;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        }
+        /* The Close Button (x) */
+        
+        .close {
+            margin: 14px;
+            float: right;
+            color: #000;
+            font-size: 28px;
+            padding: 0 10px;
+        }
+        
+        .close:hover,
+        .close:focus {
+            background-color: #ddd;
+            padding: 0 10px;
+            cursor: pointer;
+        }
+        /* Add Zoom Animation */
+        
+        .animate {
+            -webkit-animation: animatezoom 0.6s;
+            animation: animatezoom 0.6s;
+        }
+        
+        @-webkit-keyframes animatezoom {
+            from {
+                -webkit-transform: scale(0);
+            }
+            to {
+                -webkit-transform: scale(1);
+            }
+        }
+        
+        @keyframes animatezoom {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+        /* Change styles for span and cancel button on extra small screens */
+        
+        @media screen and (max-width: 300px) {
+            .cancelbtn {
+                width: 100%;
+            }
+        }
+        
+        .loader-1 {
+            margin-left: 1em;
+            margin-right: 1em;
+            width: 16px;
+            height: 16px;
+            border: 3.5px solid rgb(81, 81, 82);
+            border-bottom-color: #a1a0a0;
+            border-radius: 50%;
+            display: none;
+            -webkit-animation: rotation 1.5s linear infinite;
+            animation: rotation 1.5s linear infinite;
+            vertical-align: middle;
+        }
+        /* keyFrames */
+        
+        @-webkit-keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topnav">
+        <a href="/index.html">File Manager</a>
+        <a class="active" href="/?upgrade">Firmware upgrade</a>
+        <a href="/?wifi">Wi-Fi</a>
+    </div>
+
+    <div id="upgrade" class="modal">
+        <div class="modal-content animate">
+            <span onclick="document.getElementById('upgrade').style.display='none'" onclick="document.getElementById('newfile').value = null" class="close" title="Close">&times;</span
+        >
+        <div class="container">
+          <h2>Upload image file</h2>
+          <p></p>
+          <p id="upgrade-file" style="color: black; font-weight: bold"></p>
+        </div>
+        <button type="button" onclick="updateFirmware()" class="submit-button">
+          Confirm
+        </button>
+      </div>
+    </div>
+
+    <div id="formatSD" class="modal">
+      <div class="modal-content animate">
+        <span onclick="document.getElementById('formatSD').style.display='none'" class="close" title="Close">&times;</span
+          >
+          <div class="container">
+            <h2>Format SD card?</h2>
+            <p></p>
+            <p id="upgrade-file" style="color: black; font-weight: bold"></p>
+          </div>
+          <button type="button" onclick="format()" class="submit-button">
+            Confirm
+          </button>
+        </div>
+      </div>
+
+
+    <table class="header" border="0">
+      <tr>
+        <td>
+          <h1 style="color:#47c">Firmware upgrade</h1>
+        </td>
+        <td>
+          <div id="logo">
+            <a href="/"><img src="/logo.png" alt="Logo" style="width: 200px; height: auto;" /></a>
+          </div>
+        </td>
+      </tr>
+    </table>
+    
+    <div class="btn-group">
+      <input id="newfile" type="file" accept=".bin" onchange="upload()" />
+      <label for="newfile" type="button" class="custom-file-upload"
+        >Upload image</label
+      >
+      <span class="loader-1"></span>
+            <span id="status2"></span>
+        </div>
+        <h4 id="status"></h4>
+        <h4 id="error" style="color: red; font-weight: bold"></h4>
+        <hr/>
+
+        <script>
+            var modal = document.getElementById("upgrade");
+            var formatSDmodal = document.getElementById("formatSD");
+
+            // When the user clicks anywhere outside of the modal, close it
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                    document.getElementById("newfile").value = null;
+                }
+            };
+            // When the user clicks esc button, close it
+            document.addEventListener("keyup", function(e) {
+                if (e.keyCode == 27) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    modal.style.display = "none";
+                    document.getElementById("newfile").value = null;
+                }
+            });
+
+            // function to open pop-up windows
+            function upload() {
+                document.getElementById("upgrade").style.display = "block";
+                document.getElementById("upgrade-file").innerHTML =
+                    document.getElementById("newfile").files[0].name;
+                document.getElementById("status").innerHTML = "";
+                document.getElementById("status2").innerHTML = "";
+                document.getElementById("error").innerHTML = "";
+            }
+
+            function partitionSDcard() {
+                document.getElementById("formatSD").style.display = "block";
+                document.getElementById("status").innerHTML = "";
+                document.getElementById("status2").innerHTML = "";
+                document.getElementById("error").innerHTML = "";
+            }
+
+            async function format() {
+                var url = "/partition";
+                var statusJSON;
+                document.getElementById("formatSD").style.display = "none";
+                document.getElementById("format-status").innerHTML = "Formatting SD Card";
+                document.getElementsByClassName("loader-1")[1].style.display =
+                    "inline-block";
+                try {
+                    var res = await fetch(url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: {
+                            timestamp: Date.now()
+                        },
+                    });
+                    statusJSON = await res.json();
+                    console.info("Reply: " + statusJSON);
+                } catch (e) {
+                    document.getElementById("format-status").innerHTML = "Error formatting SD Card, check if card is present";
+                    console.info("no status update");
+                }
+                if (statusJSON) {
+                    document.getElementById("format-status").innerHTML = statusJSON.status;
+                }
+                //alert("Reply from server!");
+                document.getElementsByClassName("loader-1")[1].style.display =
+                    "none";
+
+            }
+
+            var seconds;
+            var mytimerVar;
+
+            function updateFirmware() {
+                document.getElementById("upgrade").style.display = "none";
+
+                var filePath = document.getElementById("newfile").files[0].name;
+                var fileInput = document.getElementById("newfile").files;
+
+                //var self = this;
+
+                var MAX_FILE_SIZE = 4;
+
+                if (fileInput.length == 0) {
+                    document.getElementById("error").innerHTML = "No file selected!";
+                } else if (filePath.length == 0) {
+                    document.getElementById("error").innerHTML =
+                        "File path on server is not set!";
+                } else if (fileInput[0].size > MAX_FILE_SIZE * 1024 * 1024) {
+                    document.getElementById("error").innerHTML =
+                        "File size must be less than " + MAX_FILE_SIZE + " MB";
+                } else {
+                    document.getElementById("status2").innerHTML =
+                        "Uploading " + filePath;
+                    document.getElementById("newfile").disabled = true;
+
+                    var file = fileInput[0];
+                    var uri = "/update";
+                    var xhr = new XMLHttpRequest();
+                    //var fd = new FormData();
+
+                    xhr.addEventListener("load", transferComplete, false);
+                    xhr.addEventListener("error", transferFailed, false);
+                    xhr.addEventListener("abort", transferCanceled, false);
+
+                    xhr.upload.addEventListener(
+                        "progress",
+                        function(e) {
+                            var pc = parseInt((e.loaded / e.total) * 100);
+                            console.log("Progress: " + pc + "%");
+                        },
+                        false
+                    );
+
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState == 4) {
+                            document.getElementsByClassName("loader-1")[0].style.display =
+                                "none";
+                            if (xhr.status == 200) {
+                                getstatus();
+                                //document.getElementById("status2").innerHTML = this.responseText;
+                                console.log(
+                                    this.readyState + " " + this.status + " " + this.responseText
+                                );
+                            } else if (xhr.status == 0) {
+                                getstatus();
+                                console.log(this.readyState + " " + this.status);
+                            } else {
+                                getstatus();
+                                //document.getElementById("status2").innerHTML = this.responseText;
+                                console.log(
+                                    this.readyState + " " + this.status + " " + this.responseText
+                                );
+                            }
+                        }
+                    };
+                    document.getElementsByClassName("loader-1")[0].style.display =
+                        "inline-block";
+                    xhr.open("POST", uri, !0);
+                    //fd.append("file", file);
+                    //xhr.setRequestHeader("Content-Type", "multipart/form-data");
+                    // Initiate a multipart/form-data upload
+                    xhr.send(file);
+                }
+            }
+
+            function updateProgress(oEvent) {
+                if (oEvent.lengthComputable) {
+                    var percentComplete = oEvent.loaded / oEvent.total;
+                    console.log(Math.round(percentComplete * 100) + "%");
+                } else {
+                    // Unable to compute progress information since the total size is unknown
+                    console.log("Total size is unknown...");
+                }
+            }
+
+            function transferComplete(evt) {
+                //getstatus();
+                console.log("The transfer is complete.");
+            }
+
+            function transferFailed(evt) {
+                console.log("An error occurred while transferring the file.");
+            }
+
+            function transferCanceled(evt) {
+                console.log("The transfer has been canceled by the user.");
+            }
+
+            function getstatus() {
+                var xhr = new XMLHttpRequest();
+                var requestURL = "/status";
+                xhr.open("POST", requestURL, true);
+                xhr.send("/status");
+                document.getElementById("newfile").disabled = false;
+                xhr.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var response = JSON.parse(xhr.responseText);
+
+                        // If flashing was complete it will return a 1, else -1
+                        // A return of 0 is just for information on the Latest Firmware request
+                        if (response.status == 1) {
+                            // Init the countdown timer time
+                            seconds = 10;
+                            // Start the countdown timer
+                            document.getElementById("status2").innerHTML =
+                                "Flash success: " +
+                                document.getElementById("newfile").files[0].name;
+                            startMyTimer();
+                        } else if (response.status == -1) {
+                            document.getElementById("status2").innerHTML =
+                                "Upload failed: " +
+                                document.getElementById("newfile").files[0].name;
+                            document.getElementById("error").innerHTML =
+                                "Error:  " + response.error;
+                        }
+                    }
+                };
+            }
+
+            function startMyTimer() {
+                document.getElementById("status").innerHTML = "Reboot in: " + seconds;
+
+                if (--seconds == 0) {
+                    clearTimeout(mytimerVar);
+
+                    window.location.reload();
+                } else {
+                    mytimerVar = setTimeout(startMyTimer, 1000);
+                }
+            }
+        </script>

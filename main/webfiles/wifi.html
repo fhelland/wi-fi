@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wi-Fi Manager</title>
+    <style>
+        .topnav {
+            overflow: hidden;
+            background-color: rgb(0, 119, 190);
+        }
+        
+        .topnav a {
+            float: left;
+            color: #f2f2f2;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+            font-size: 17px;
+        }
+        
+        .topnav a:hover {
+            background-color: rgb(49, 151, 196);
+            color: black;
+        }
+        
+        .topnav a.active {
+            background-color: #363f6b;
+            color: white;
+        }
+        
+        .header {
+            padding: 0;
+            margin: 10px;
+            width: 100%;
+            height: 100px;
+        }
+        
+        .header td:first-child {
+            text-align: left;
+        }
+        
+        .header td:last-child {
+            text-align: right;
+            padding-right: 10px;
+        }
+        
+        button {
+            color: #444;
+            font-size: 10pt;
+            padding: 0.2em 1.1em;
+            border: transparent;
+            text-decoration: none;
+            border-radius: 0.1em;
+            vertical-align: middle;
+            cursor: pointer;
+            margin: 4px;
+            text-align: center;
+            height: 30px;
+            width: 110px;
+            background-color: #99ccff;
+        }
+        
+        body {
+            max-width: 950px;
+            margin-left: auto;
+            margin-right: auto;
+            font-family: tahoma, verdana, arial, helvetica, sans;
+            transition: background-color 1s ease;
+            background-color: whitesmoke;
+            font-size: 11pt;
+            color: #777;
+        }
+        
+        .column {
+            float: left;
+            width: 50%;
+            padding: 0px;
+        }
+        /* Clear floats after the columns */
+        
+        .row {
+            margin: 10px;
+        }
+        
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
+        a {
+            text-decoration: none;
+            color: #357;
+            border: 1px solid transparent;
+            padding: 0 0.1em;
+        }
+        
+        .network-list {
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .network-list td {
+            height: 30px;
+            /*border-bottom: 1px solid #ddd;*/
+            padding: 5px;
+        }
+        
+        .network-list td:first-child {
+            text-align: left;
+        }
+        
+        .network-list tr:hover {
+            /*border-bottom: 1px solid #ddd;*/
+            background-color: #ddc;
+            cursor: pointer;
+        }
+        
+        .table-tr-1-selected {
+            background-color: #ddc;
+        }
+        
+        .table-tr-1 {
+            border-bottom: 1px solid #888;
+        }
+        
+        .table-tr-2 {
+            background-color: #ddc;
+            border-bottom: 1px solid #888;
+        }
+        
+        .btn-group {
+            margin: 5px 10px;
+        }
+        
+        .connect {
+            text-align: center;
+            height: 30px;
+            width: 110px;
+            background-color: #99ccff;
+            display: none;
+        }
+        
+        button:hover {
+            background-color: #b8e0de;
+        }
+        
+        button:active {
+            background-color: #3473b2;
+            color: #ddd;
+        }
+        
+        button:disabled {
+            background-color: #dddddd;
+            color: #ccc;
+            cursor: default;
+        }
+        
+        hr {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            border-top: 1px solid #bbb;
+        }
+        /* Full-width input fields */
+        
+        input {
+            /* [type="password"] { */
+            width: 50%;
+            padding: 5px 5px;
+            margin: 8px 0;
+            border: 1px solid black;
+            box-sizing: border-box;
+        }
+        
+        .w0 {
+            background: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxwYXRoIGQ9Ik0xLDlMMywxMUM3Ljk3LDYuMDMgMTYuMDMsNi4wMyAyMSwxMUwyMyw5QzE2LjkzLDIuOTMgNy4wOCwyLjkzIDEsOVoiIHN0eWxlPSJmaWxsOiBibGFjazsiLz4KPHBhdGggZD0iTTUsMTNMNywxNUM5Ljc2LDEyLjI0IDE0LjI0LDEyLjI0IDE3LDE1TDE5LDEzQzE1LjE0LDkuMTQgOC44Nyw5LjE0IDUsMTNaIiBzdHlsZT0iZmlsbDogYmxhY2s7Ii8+CjxwYXRoIGQ9Ik05LDE3TDEyLDIwTDE1LDE3QzEzLjM1LDE1LjM0IDEwLjY2LDE1LjM0IDksMTdaIiBzdHlsZT0iZmlsbDogYmxhY2s7Ii8+Cjwvc3ZnPgo=') no-repeat right top;
+            height: 24px;
+            margin-right: 20px;
+        }
+        
+        .w1 {
+            background: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxwYXRoIGQ9Ik0xLDlMMywxMUM3Ljk3LDYuMDMgMTYuMDMsNi4wMyAyMSwxMUwyMyw5QzE2LjkzLDIuOTMgNy4wOCwyLjkzIDEsOVoiIHN0eWxlPSJmaWxsOiBncmF5OyIvPgo8cGF0aCBkPSJNNSwxM0w3LDE1QzkuNzYsMTIuMjQgMTQuMjQsMTIuMjQgMTcsMTVMMTksMTNDMTUuMTQsOS4xNCA4Ljg3LDkuMTQgNSwxM1oiIHN0eWxlPSJmaWxsOiBibGFjazsiLz4KPHBhdGggZD0iTTksMTdMMTIsMjBMMTUsMTdDMTMuMzUsMTUuMzQgMTAuNjYsMTUuMzQgOSwxN1oiIHN0eWxlPSJmaWxsOiBibGFjazsiLz4KPC9zdmc+Cg==') no-repeat right top;
+            height: 24px;
+            margin-right: 20px;
+        }
+        
+        .w2 {
+            background: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxwYXRoIGQ9Ik0xLDlMMywxMUM3Ljk3LDYuMDMgMTYuMDMsNi4wMyAyMSwxMUwyMyw5QzE2LjkzLDIuOTMgNy4wOCwyLjkzIDEsOVoiIHN0eWxlPSJmaWxsOiBncmF5OyIvPgo8cGF0aCBkPSJNNSwxM0w3LDE1QzkuNzYsMTIuMjQgMTQuMjQsMTIuMjQgMTcsMTVMMTksMTNDMTUuMTQsOS4xNCA4Ljg3LDkuMTQgNSwxM1oiIHN0eWxlPSJmaWxsOiBncmF5OyIvPgo8cGF0aCBkPSJNOSwxN0wxMiwyMEwxNSwxN0MxMy4zNSwxNS4zNCAxMC42NiwxNS4zNCA5LDE3WiIgc3R5bGU9ImZpbGw6IGJsYWNrOyIvPgo8L3N2Zz4K') no-repeat right top;
+            height: 24px;
+            margin-right: 20px;
+        }
+        
+        .w3 {
+            background: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxwYXRoIGQ9Ik0xLDlMMywxMUM3Ljk3LDYuMDMgMTYuMDMsNi4wMyAyMSwxMUwyMyw5QzE2LjkzLDIuOTMgNy4wOCwyLjkzIDEsOVoiIHN0eWxlPSJmaWxsOiBncmF5OyIvPgo8cGF0aCBkPSJNNSwxM0w3LDE1QzkuNzYsMTIuMjQgMTQuMjQsMTIuMjQgMTcsMTVMMTksMTNDMTUuMTQsOS4xNCA4Ljg3LDkuMTQgNSwxM1oiIHN0eWxlPSJmaWxsOiBncmF5OyIvPgo8cGF0aCBkPSJNOSwxN0wxMiwyMEwxNSwxN0MxMy4zNSwxNS4zNCAxMC42NiwxNS4zNCA5LDE3WiIgc3R5bGU9ImZpbGw6IGdyYXk7Ii8+Cjwvc3ZnPgo=') no-repeat right top;
+            height: 24px;
+            margin-right: 20px;
+        }
+        
+        .pw {
+            background: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+Cjxzdmcgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxwYXRoIHN0eWxlPSJmaWxsOiBibGFjazsiIGQ9Ik0xOCA4aC0xVjZjMC0yLjc2LTIuMjQtNS01LTVTNyAzLjI0IDcgNnYySDZjLTEuMSAwLTIgLjktMiAydjEwYzAgMS4xLjkgMiAyIDJoMTJjMS4xIDAgMi0uOSAyLTJWMTBjMC0xLjEtLjktMi0yLTJ6bS02IDljLTEuMSAwLTItLjktMi0ycy45LTIgMi0yIDIgLjkgMiAyLS45IDItMiAyem0zLjEtOUg4LjlWNmMwLTEuNzEgMS4zOS0zLjEgMy4xLTMuMSAxLjcxIDAgMy4xIDEuMzkgMy4xIDMuMXYyeiI+PC9wYXRoPgo8L3N2Zz4=') no-repeat right top;
+            height: 24px;
+            margin-right: 30px;
+        }
+        /* Change styles for span and cancel button on extra small screens */
+        
+        @media screen and (max-width: 600px) {
+            .column {
+                width: 100%;
+            }
+            span.psw {
+                display: block;
+                float: none;
+            }
+        }
+        
+        .loader-1 {
+            margin-left: 1em;
+            margin-right: 1em;
+            width: 16px;
+            height: 16px;
+            border: 3.5px solid rgb(81, 81, 82);
+            border-bottom-color: #a1a0a0;
+            border-radius: 50%;
+            display: none;
+            -webkit-animation: rotation 1.5s linear infinite;
+            animation: rotation 1.5s linear infinite;
+            vertical-align: middle;
+        }
+        /* keyFrames */
+        
+        @-webkit-keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        /*
+    .animate-charcter {
+
+      background-image: linear-gradient(-225deg, #9e9e9e 0%, #44107a 29%, #5c5b7c 67%, #17bdff 100%);
+      background-size: auto auto;
+      background-clip: border-box;
+      background-size: 200% auto;
+      color: #fff;
+      background-clip: text;
+
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: textclip 1s linear infinite;
+      display: inline-block;
+
+    }
+
+    @keyframes textclip {
+      to {
+        background-position: 200% center;
+      }
+    }*/
+    </style>
+</head>
+
+<body>
+    <div class="topnav">
+        <a href="/index.html">File Manager</a>
+        <a href="/?upgrade">Firmware upgrade</a>
+        <a class="active" href="/?wifi">Wi-Fi</a>
+    </div>
+
+
+
+    <table class="header" border="0">
+        <tbody>
+            <tr>
+                <td>
+                    <h1 style="color:#47c">Wi-Fi Manager</h1>
+                </td>
+                <td>
+                    <div id="logo">
+                        <a href="/"><img src="/logo.png" alt="Logo" style="width: 200px; height: auto;"></a>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="btn-group">
+        <button id="scan" onclick="refreshAP()">Scan</button>
+        <span class="loader-1"></span>
+        <span id="status"></span>
+    </div>
+
+    <hr>
+
+    <script>
+        var access_points;
+        var statusJSON;
+        var selectedSSID = "";
+
+        function docReady(fn) {
+            // see if DOM is already available
+            if (
+                document.readyState === "complete" ||
+                document.readyState === "interactive"
+            ) {
+                // call on next available tick
+                setTimeout(fn, 1);
+            } else {
+                document.addEventListener("DOMContentLoaded", fn);
+            }
+        }
+
+        docReady(async function() {
+            //first time the page loads: attempt get the connection status and start the wifi scan
+            await refreshAP();
+
+        });
+
+        function rssiToIcon(rssi) {
+            if (rssi >= -62) {
+                return "w0";
+            } else if (rssi >= -69) {
+                return "w1";
+            } else if (rssi >= -79) {
+                return "w2";
+            } else {
+                return "w3";
+            }
+        }
+
+        /* Function to retrive AP list from wi-fi module and request a fresh wi-fi scan */
+        async function refreshAP(url = "?ap_list") {
+            document.getElementById("scan").disabled = true;
+            document.getElementById("status").innerHTML = "Scanning";
+            document.getElementsByClassName("loader-1")[0].style.display = "inline-block";
+            await updateStatus();
+            try {
+                var res = await fetch(url);
+                access_points = await res.json();
+                refreshAPHTML(access_points);
+            } catch (e) {
+                console.info("Access points returned empty!");
+            }
+            document.getElementsByClassName("loader-1")[0].style.display = "none";
+            document.getElementById("scan").disabled = false;
+            document.getElementById("status").innerHTML = "";
+        }
+        /*
+         *    AUTH_MODES: 
+         *    Auth = 0:    authenticate mode : open 
+         *    Auth = 1:    authenticate mode : WEP
+         *    Auth = 2:    authenticate mode : WPA_PSK 
+         *    Auth = 3:    authenticate mode : WPA2_PSK 
+         *    Auth = 4:    authenticate mode : WPA_WPA2_PSK 
+         *    Auth = 5:    authenticate mode : WPA2_ENTERPRISE
+         *    Auth = 6:    authenticate mode : WPA3_PSK
+         *    Auth = 7:    authenticate mode : WPA2_WPA3_PSK
+         *    Auth = 8:    authenticate mode : WAPI_PSK    */
+
+        /* Function to generate access points table */
+        function refreshAPHTML(data) {
+            var h = "";
+            //var connectedAP = document.getElementById("ssid-conn").innerHTML;
+            h += '<table style="width: 100%" class="network-list"><colgroup><col width="300px"><col width="200px"><col width="100px"></colgroup><tbody>\n'
+            data.forEach(function(e, idx, array) {
+                //let ap_class = idx === array.length - 1 ? "" : " brdb";
+                let rssicon = rssiToIcon(e.rssi);
+                let auth = e.auth == 0 ? "" : "pw";
+                let trClass = "table-tr-1";
+                let button = "";
+                let user = "";
+                let password = "";
+                let display = "";
+                let connect = "";
+                if (selectedSSID == e.ssid) {
+                    trClass = "table-tr-1-selected";
+                    button = '<button id="disconnect" onclick="disconnect()">Disconnect</button>';
+                    display = "table-row";
+                    connect = "Connected";
+                } else {
+                    display = "none";
+                    button = `<button onclick="performConnect(${idx})">Connect</button>`;
+                    if (e.auth == 5) {
+                        password = `<input id ="pass${idx}" type="password" placeholder="Enter Password" name="psw" value="" autocomplete=off>`;
+                        user = `<input id ="user${idx}" type="text" placeholder="Username" name="user" value="" autocomplete=off>`;
+                    } else if (e.auth != 0) {
+                        password = `<input id ="pass${idx}" type="password" placeholder="Enter Password" name="psw" value="" autocomplete=off>`;
+
+                    }
+                }
+                h += `<tr onclick="onRowClick(this)" class=${trClass}><td>${e.ssid}</td><td class="connectStatus">${connect}</td><td><div class="${rssicon}"><div class="${auth}"></div></div></td></tr>\n`;
+                h += `<tr class="table-tr-2" style="display: ${display}"><td>${user}${password}</td><td>${button}</td><td></td></tr>\n`;
+
+            });
+            h += '</tbody></table>\n'
+                //console.info("This is it: " + h);
+            document.getElementById("ap-list").innerHTML = h;
+        }
+
+        async function disconnect(url = "disconnect") {
+            document.getElementById("disconnect").disabled = true;
+            //document.getElementsByClassName("loader-1")[0].style.display = "inline-block";
+            try {
+                var res = await fetch(url, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: {
+                        timestamp: Date.now()
+                    },
+                });
+                var response;
+                console.log("Status: " + res.status);
+                updateTable(response);
+            } catch (e) {
+                console.log("Response error");
+                //alert("HTTP-Error: " + res.status);
+            }
+            updateStatus();
+        }
+
+        /* Perform a connection  */
+        async function performConnect(row_index) {
+            const table = document.getElementById("ap-list").getElementsByTagName("table")[0];
+            ssid = table.rows[row_index * 2].cells[0].innerHTML;
+            var password = "";
+            var username = "";
+            var connectStatus = table.rows[row_index * 2].querySelector(".connectStatus");
+            var input = table.rows[row_index * 2 + 1].querySelector('input[name="psw"]');
+            var button = table.rows[row_index * 2 + 1].querySelector("button");
+            var user = table.rows[row_index * 2 + 1].querySelector('input[name="user"]');
+            const allStatus = table.getElementsByClassName("connectStatus");
+            for (let status of allStatus) {
+                status.innerHTML = "";
+            }
+            if (input) {
+                if (input.value.length > 0) {
+                    password = input.value;
+                    input.disabled = true;
+                } else {
+                    alert("Empty password field!");
+                    return;
+                }
+            }
+            if (user) {
+                if (user.value.length > 0) {
+                    username = user.value;
+                    user.disabled = true;
+                } else {
+                    alert("Empty username field!");
+                    return;
+                }
+
+            }
+            button.disabled = true;
+
+            connectStatus.innerHTML = "Connecting";
+            //document.getElementsByClassName("loader-1")[0].style.display = "inline-block";
+            var myDiv = document.getElementById("ap-info");
+            var h = '<h2>Connecting... <span class="loader-1"></span></h2>\n';
+            myDiv.innerHTML = h;
+            document.getElementsByClassName("loader-1")[1].style.display = "inline-block";
+
+            try {
+                var res = await fetch("connect", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Custom-ssid": ssid,
+                        "X-Custom-pwd": password,
+                        "X-Custom-user": username,
+                    },
+                    body: {
+                        timestamp: Date.now()
+                    },
+                });
+            } catch (e) {
+                console.log("Unexpected connection error!");
+                alert("Connect error!");
+                updateStatus();
+            }
+
+            if (user) user.disabled = false;
+            if (input) input.disabled = false;
+
+            //setTimeout(function() {
+            await updateStatus();
+            document.getElementById("status").innerHTML = "";
+
+            if (ssid != selectedSSID) {
+                connectStatus.innerHTML = "Could not connect";
+                connectStatus.style.color = "red";
+            }
+            button.disabled = false;
+            //}, 1000);
+        }
+
+        async function updateStatus() {
+
+            var url = "?connect_status";
+            try {
+                var res = await fetch(url);
+                statusJSON = await res.json();
+            } catch (e) {
+                console.info("no status update");
+            }
+            updateTable(statusJSON);
+        }
+
+        function updateTable(data) {
+            var h;
+            var myDiv = document.getElementById("ap-info");
+            var oldSSID = document.getElementById("ssid-conn");
+            if (data && data.hasOwnProperty("ssid") && data["ssid"] != "") {
+                switch (data["urc"]) {
+                    case 0:
+                        console.info("Got connection!");
+                        h = '<h2>Connected to</h2>';
+                        h += `<table><tbody><tr><td><strong>Wireless network:</strong></td><td id="ssid-conn">${data.ssid}</td></tr>`;
+                        h += `<tr><td><strong>Channel:</strong></td><td>${data.ch}</td></tr>`;
+                        h += `<tr><td><strong>Signal:</strong></td><td>${data.rssi} dB</td></tr>`;
+                        h += `<tr><td><strong>IP adress:</strong></td><td>${data.ip}</td></tr>`;
+                        h += `<tr><td><strong>Gateway:</strong></td><td>${data.gw}</td></tr>`;
+                        h += `<tr><td><strong>Netmask:</strong></td><td>${data.netmask}</td></tr></tbody></table>`;
+                        if (selectedSSID != data.ssid) {
+                            selectedSSID = data.ssid;
+                            if (access_points != null) {
+                                refreshAPHTML(access_points);
+                            }
+                        }
+                        break;
+                    case 1:
+                        console.info("Connection attempt failed!");
+                        //document.getElementById("status").innerHTML = "Failed to connect to network";
+                        h = '<h2>Not connected</h2><p id="ssid-conn"></p>';
+                        //h += '<p>Last connection attempt failed</p>'
+                        break;
+                    default:
+                        console.info("No connection");
+                        h = '<h2>Not connected</h2><p id="ssid-conn"></p>';
+                        break;
+                }
+            } else {
+                if (selectedSSID != "") {
+                    selectedSSID = "";
+                    if (access_points != null) {
+                        refreshAPHTML(access_points);
+                    }
+                }
+                h = '<h2>Not connected</h2><p id="ssid-conn"></p>';
+            }
+
+            myDiv.innerHTML = h;
+            /*if (oldSSID && (selectedSSID != "")) {
+              if (oldSSID.innerText != selectedSSID) {
+                myDiv.classList.add("animate-charcter");
+                setTimeout(function() {
+                  myDiv.classList.remove('animate-charcter');
+                }, 1000);
+              }
+            } else if (!oldSSID && selectedSSID != "") {
+              myDiv.classList.add("animate-charcter");
+              setTimeout(function() {
+                myDiv.classList.remove('animate-charcter');
+              }, 1000);
+            }*/
+        }
+
+        // Function to highlight a row in the ssid list and allow for conncting to a network
+        function onRowClick(selected) {
+            const table = document.getElementById("ap-list").getElementsByTagName("table")[0];
+            const allTr = table.querySelectorAll(":scope > tbody > tr ");
+
+            for (let tr of allTr) {
+                if (tr.classList.contains('table-tr-1-selected')) {
+                    tr.className = ('table-tr-1');
+                }
+                if (tr.classList.contains('table-tr-2')) {
+                    tr.style.display = "none";
+                }
+                var password = tr.querySelector('input[name="psw"]');
+                var user = tr.querySelector('input[name="user"]');
+                if (password) {
+                    password.value = "";
+                }
+                if (user) {
+                    user.value = "";
+                }
+            }
+            if (selected.classList.contains('table-tr-1')) {
+                selected.className = ('table-tr-1-selected');
+                selected.nextElementSibling.style.display = "table-row";
+                var password = selected.nextElementSibling.querySelector('input[name="psw"]');
+                var button = selected.nextElementSibling.querySelector("button");
+                var user = selected.nextElementSibling.querySelector('input[name="user"]');
+
+                if (password) {
+                    if (user) {
+                        user.focus();
+                    } else {
+                        password.focus();
+                    }
+                    password.addEventListener("keydown", function(event) {
+                        if (event.keyCode == 13) {
+                            if (password.value.length > 0) {
+                                button.click();
+                            } else {
+                                password.placeholder = "Enter password!";
+                            }
+                        }
+                    }, false);
+                }
+            }
+        }
+    </script>
