@@ -75,8 +75,10 @@ void rx_task(void *arg)
             // Walk-around for robust implementation.
             int to_write = rxBytes; 
             while (to_write > 0) {
+                // send will attempt to send data received on uart2 to a socket. If socket is not connected, send will return -1.
+                // Otherwise it will return the number of bytes sent.
                 written = send(sock, data + (rxBytes - to_write), to_write, 0);
-                //int written = send(sock, data, rxBytes, 0);
+                
                 ESP_LOGI(RX_TASK_TAG, "Received %i bytes from UART. Sent to SOCKET #%i: %d bytes", rxBytes, sock, written);
 
                 if (written < 0) {
