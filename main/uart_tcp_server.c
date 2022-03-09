@@ -61,8 +61,7 @@ void rx_task(void *arg)
     if (!uart_is_driver_installed(EX_UART_NUM)) {
         uart_init();
     }
-    //ESP_LOGI(RX_TASK_TAG, "Uart driver installed");
-    //esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
+    
     char* data = (char*) malloc(UART_RX_BUF_SIZE);
     int written = 1;
     while (1)
@@ -76,7 +75,7 @@ void rx_task(void *arg)
             int to_write = rxBytes; 
             while (to_write > 0) {
                 // send will attempt to send data received on uart2 to a socket. If socket is not connected, send will return -1.
-                // Otherwise it will return the number of bytes sent.
+                // Otherwise it will return the number of bytes actually sent.
                 written = send(sock, data + (rxBytes - to_write), to_write, 0);
                 
                 ESP_LOGI(RX_TASK_TAG, "Received %i bytes from UART. Sent to SOCKET #%i: %d bytes", rxBytes, sock, written);
