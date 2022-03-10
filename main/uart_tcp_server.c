@@ -78,10 +78,10 @@ void rx_task(void *arg)
                 // Otherwise it will return the number of bytes actually sent.
                 written = send(sock, data + (rxBytes - to_write), to_write, 0);
                 
-                ESP_LOGI(RX_TASK_TAG, "Received %i bytes from UART. Sent to SOCKET #%i: %d bytes", rxBytes, sock, written);
+                ESP_LOGI(RX_TASK_TAG, "Received %i bytes from UART. Sent to SOCKET: %d bytes", rxBytes, written);
 
                 if (written < 0) {
-                    ESP_LOGE(RX_TASK_TAG, "Error occurred during sending to socket: Error no: %d", errno);
+                    ESP_LOGW(RX_TASK_TAG, "Error occurred during sending to socket: Error no: %d", errno);
                     break;
                 }
                 to_write -= written;
@@ -122,7 +122,7 @@ static void do_retransmit(const int sock)
         //printf("Lowest free memmory since boot: %i KB\n", esp_get_minimum_free_heap_size() / 1024);
     } while (len > 0);
     free(rx_buffer);
-    ESP_LOGI(TX_TASK_TAG, "Exiting do_transmit function");
+    ESP_LOGI(TX_TASK_TAG, "Exiting socket transmit function");
 
 }
 
@@ -192,7 +192,6 @@ void tcp_server_task(void *pvParameters)
         struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
         socklen_t addr_len = sizeof(source_addr);
         sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
-        ESP_LOGI(TAG, "Socket is %i", sock);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
             break;

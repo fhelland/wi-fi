@@ -38,7 +38,7 @@ static const char *TAG = "MAIN";
 #define WAKEUP2                 (35)           /* Wake up and only run Receive SPI messages      */
 
 // Deep sleep pin :
-#define SLEEP_PIN               (35)         // Pin that will trigger sleep. Use pin 0 for testing with boot button on dev board.
+#define SLEEP_PIN               (0)         // Pin that will trigger sleep. Use pin 0 for testing with boot button on dev board.
 #define ESP_INTR_FLAG_DEFAULT   (0)
 TaskHandle_t ISR = NULL;
 
@@ -53,7 +53,6 @@ void IRAM_ATTR sleep_isr_handler(void* arg) {
 // task that will send device to sleep on pin interrupt ////////////
 void sleep_task(void *arg)
 {
-/////////////////////// Config for sleep-pin ///////////////////////////
     
     gpio_pad_select_gpio(SLEEP_PIN);
     // set the correct direction
@@ -65,24 +64,21 @@ void sleep_task(void *arg)
     // attach the interrupt service routine
     gpio_isr_handler_add(SLEEP_PIN, sleep_isr_handler, (void*) SLEEP_PIN);
 
-    ///////////////////////////////////////////////////////////////////
+    
+    // The task suspends itself.
+    vTaskSuspend( NULL );
+    // The task is now suspended, so will not reach here until the ISR resumes it.
 
-         // The task suspends itself.
-         vTaskSuspend( NULL );
-         // The task is now suspended, so will not reach here until the ISR resumes it.
+    printf("Detected interrup on sleep pin, going to sleep now !\n");
 
-        printf("Detected interrup on sleep pin, going to sleep now !\n");
-
-        //Check if the wi-fi manager has been started. Wi-fi needs to be stopped before going to sleep.
-        if (wifi_manager_get_esp_netif_ap() != NULL) {
-            esp_wifi_stop();
-            esp_wifi_deinit();
-        }
-        
-        rtc_gpio_isolate(GPIO_NUM_12);
-
-        esp_deep_sleep_start();
-
+    //Check if the wi-fi manager has been started. Wi-fi needs to be stopped before going to sleep.
+    if (wifi_manager_get_esp_netif_ap() != NULL) {
+        esp_wifi_stop();
+        esp_wifi_deinit();
+    }
+      
+    rtc_gpio_isolate(GPIO_NUM_12);
+    esp_deep_sleep_start();
     vTaskDelete(NULL);
 }
 
@@ -103,12 +99,13 @@ void start_mdns_service()
 
     char name[33];
     
+    //set hostname
     if (read_from_nvs(name)) {
         mdns_hostname_set(name);
     } else {
         mdns_hostname_set(DEFAULT_HOSTNAME);
     }
-    //set hostname
+
     
     //set default instance
     mdns_instance_name_set("wifi_mdns");
