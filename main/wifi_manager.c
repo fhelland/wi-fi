@@ -472,13 +472,8 @@ bool wifi_manager_fetch_wifi_sta_config()
 		/* password */
 		sz = sizeof(wifi_manager_config_sta->sta.password);
 		esp_err = nvs_get_blob(handle, "password", buff, &sz);
-		if(esp_err != ESP_OK){
-			//free(buff);
-			//nvs_sync_unlock();
+		if(esp_err == ESP_OK){
 			// Sometimes there is no password saved, due to open network or WPA-ENTERPRISE. So blank password is allowed
-			memcpy(wifi_manager_config_sta->sta.password, "", 1);
-			//return false;
-		} else {
 			memcpy(wifi_manager_config_sta->sta.password, buff, sz);
 		}
 
@@ -492,7 +487,7 @@ bool wifi_manager_fetch_wifi_sta_config()
 		}
 		memcpy(&wifi_settings, buff, sz);
 
-		/* allocate buffer */
+		/* re-allocate memory */
 		sz = sizeof(wpa_enterprise_settings);
 		buff = (uint8_t*)realloc(buff, sizeof(uint8_t) * sz);
 		memset(buff, 0x00, sizeof(sz));
@@ -501,17 +496,15 @@ bool wifi_manager_fetch_wifi_sta_config()
 		wpa_enterprise_settings_t tmp_wpa_e_settings;
 		memset(&tmp_wpa_e_settings, 0x00, sizeof(tmp_wpa_e_settings));
 		sz = sizeof(tmp_wpa_e_settings);
-		//ESP_LOGI(TAG, "Size of enterprise settings: %i", sz);
 		esp_err = nvs_get_blob(handle, "wpa_enterprise", &tmp_wpa_e_settings, &sz);
 		if(esp_err != ESP_OK){
-			ESP_LOGI(TAG, "No enterprise settings saved to NVS");
+			ESP_LOGI(TAG, "No wpa enterprise settings saved to NVS");
 		} else {
-			//memcpy(wpa_enterprise_settings, buff, sz);
 			memcpy(wpa_enterprise_settings->user, tmp_wpa_e_settings.user, tmp_wpa_e_settings.user_len);
 			memcpy(wpa_enterprise_settings->password, tmp_wpa_e_settings.password, tmp_wpa_e_settings.user_len);
 			wpa_enterprise_settings->user_len = tmp_wpa_e_settings.user_len;
 			wpa_enterprise_settings->password_len = tmp_wpa_e_settings.password_len;
-			//ESP_LOGI(TAG, "Size of enterprise settings: %i", sz);
+			
 		}
 
 		free(buff);
@@ -520,7 +513,7 @@ bool wifi_manager_fetch_wifi_sta_config()
 
 
 		ESP_LOGI(TAG, "wifi_manager_fetch_wifi_sta_config: ssid:%s password:%s",wifi_manager_config_sta->sta.ssid,wifi_manager_config_sta->sta.password);
-		ESP_LOGI(TAG, "wifi_manager_fetch_wpa_enterprise_settings: user:%s | password:%s | username length: %i | password length: %i",wpa_enterprise_settings->user,wpa_enterprise_settings->password, wpa_enterprise_settings->user_len, wpa_enterprise_settings->password_len);
+		ESP_LOGI(TAG, "wifi_manager_fetch_wpa_enterprise_settings: user:%s | password: ******** | username length: %i | password length: %i",wpa_enterprise_settings->user, wpa_enterprise_settings->user_len, wpa_enterprise_settings->password_len);
 		ESP_LOGD(TAG, "wifi_manager_fetch_wifi_settings: SoftAP_ssid:%s",wifi_settings.ap_ssid);
 		ESP_LOGD(TAG, "wifi_manager_fetch_wifi_settings: SoftAP_pwd:%s",wifi_settings.ap_pwd);
 		ESP_LOGD(TAG, "wifi_manager_fetch_wifi_settings: SoftAP_channel:%i",wifi_settings.ap_channel);

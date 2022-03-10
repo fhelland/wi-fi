@@ -16,17 +16,13 @@
 #include <sys/time.h>
 #include "esp_err.h"
 #include "esp_log.h"
-
 #include "esp_wifi.h"
-
 #include <freertos/FreeRTOS.h>
 #include "freertos/task.h"
-
 #include "esp_http_server.h"
 #include "esp_ota_ops.h"
-
 #include "cJSON.h"
-// #include "driver/sdmmc_host.h"
+
 #include "sdmmc.h"
 #include "uart_tcp_server.h"
 #include "wifi_manager.h"
@@ -41,7 +37,9 @@
 #define MAX_FILE_SIZE_STR "200MB"
 
 /* Scratch buffer size */
-#define SCRATCH_BUFSIZE (8 * 1024)
+/* This is the buffer used to upload and download files from sd card. */
+/* Larger buffer will mean, higher troughput. */
+#define SCRATCH_BUFSIZE (16 * 1024)
 
 /* Internal read and write buffers*/
 #define READ_BUF (4 * 1024)
@@ -52,9 +50,8 @@
 static const char *TAG = "http_server";
 
 
-/* FreeRTOS handle for this task*/
+/* FreeRTOS handle used for connection notifications between this task and the wi-fi manager */
 static TaskHandle_t xTaskToNotify = NULL;
-//static bool HTTP_request = false;
 
 /* Status for firmware update*/
 static int flash_status;
@@ -70,7 +67,7 @@ struct file_server_data
     char scratch[SCRATCH_BUFSIZE];
 };
 
-// Here we will receive a confirmation from the wi-fi manager about a connection status.
+// Receive message back from the wi-fi manager after connect/disconnect/scan.
 void xTask_connection_give()//( UBaseType_t uxIndexToNotify)
 {
     if ( xTaskToNotify != NULL ) {
@@ -233,9 +230,6 @@ static esp_err_t ap_list_handler(httpd_req_t *req)
         {   
             /* Store the handle of the calling task. */
             xTaskToNotify = xTaskGetCurrentTaskHandle();
-            //HTTP_request = true;
-
-
             
             wifi_manager_unlock_json_buffer();
             
@@ -257,7 +251,7 @@ static esp_err_t ap_list_handler(httpd_req_t *req)
             wifi_manager_lock_json_buffer(( TickType_t ) 10);
 
             xTaskToNotify = NULL;    
-            //HTTP_request = false;
+
         }
         httpd_resp_set_status(req, "200 OK");
         httpd_resp_set_type(req, "application/json");
@@ -280,36 +274,37 @@ static esp_err_t ap_list_handler(httpd_req_t *req)
 
 static esp_err_t connect_handler(httpd_req_t *req)
 {    
-    //HTTP_request = true;
     uint32_t ulNotificationValue = 0;
     TickType_t xMaxBlockTime = 0;
 
     xTaskToNotify = xTaskGetCurrentTaskHandle();
     
     xTaskNotifyStateClear(xTaskToNotify);
-    //    printf("Cleared the state in Connection task\n");
-    //} else printf("could not clear state\n");
 
-    /* We need to check if we have an IP adress to test if we are already connected to a network. If we are, we need to trigger a disconnect */
-    /* If we are not connected, IP adress should be 0.0.0.0 */
+
+    /* We need to check if we have an IP adress to test if we are already connected to a network. If we are, we need to trigger a disconnect first */
+    /* If we are not connected, IP adress will be 0.0.0.0 */
+
+    ////////////// the following code will get the current ip adress //////
     esp_netif_ip_info_t ip_info = {};
     memset(&ip_info, 0, sizeof(esp_netif_ip_info_t));
     esp_netif_t* esp_netif_sta = wifi_manager_get_esp_netif_sta();
 	esp_netif_get_ip_info(esp_netif_sta, &ip_info);
     char ip[IP4ADDR_STRLEN_MAX];
-
     sprintf(ip, IPSTR,IP2STR(&ip_info.ip) );
+    /////////////////////////////////////////////////////////////////////
 
     if (strcmp(ip, "0.0.0.0") != 0) {
         printf("Already connected to another network, triggering disconnect!!!\n");
-        ESP_LOGI(TAG, "IP:"IPSTR, IP2STR(&ip_info.ip));
+        //ESP_LOGI(TAG, "IP:"IPSTR, IP2STR(&ip_info.ip));
 
         xTaskNotifyStateClear(xTaskToNotify);
 
         wifi_manager_disconnect_async(); 
         
-        xMaxBlockTime = 10000 / portTICK_RATE_MS;// pdMS_TO_TICKS ( 100000 ) ;
-        //Block until disconnection is done or until timeout
+        // Block until disconnection is done or until timeout. Disconnect should be quick.
+        xMaxBlockTime = 10000 / portTICK_RATE_MS;
+
         ulNotificationValue = ulTaskNotifyTake(  pdTRUE, xMaxBlockTime );
         
         if( ulNotificationValue == 1 ) printf("Disconnected all good\n");
@@ -324,7 +319,6 @@ static esp_err_t connect_handler(httpd_req_t *req)
     username_len = httpd_req_get_hdr_value_len(req, "X-Custom-user");
 	password_len = httpd_req_get_hdr_value_len(req, "X-Custom-pwd");
 
-                    
     wifi_config_t* config = wifi_manager_get_wifi_sta_config();
     wpa_enterprise_settings_t* wpa_ent = wifi_manager_get_wpa_enterprise_login();
     
@@ -339,7 +333,7 @@ static esp_err_t connect_handler(httpd_req_t *req)
         httpd_req_get_hdr_value_str(req, "X-Custom-ssid", ssid, ssid_len+1);
 		httpd_req_get_hdr_value_str(req, "X-Custom-user", username, username_len+1);
 		httpd_req_get_hdr_value_str(req, "X-Custom-pwd", password, password_len+1);
-        //ESP_LOGI(TAG, "WPA Enterprise   |    SSID: %s, username: %s, password: %s", ssid, username, password);
+
 
         memcpy(config->sta.ssid, ssid, ssid_len);  
         memcpy(wpa_ent->user, username, username_len);
@@ -353,11 +347,13 @@ static esp_err_t connect_handler(httpd_req_t *req)
         ESP_LOGI(TAG, "Waiting for task notification");
         
         uint32_t ulNotificationValue;
-        
-        const TickType_t xMaxBlockTime = (30000 / portTICK_RATE_MS);//pdMS_TO_TICKS ( 200000 ) ;
+
+        // Block until connection is done or until timeout. 
+        // Sometimes a connection prosess can take long time, ex if a wrong password is supplied for a wpa enterprise network    
+        const TickType_t xMaxBlockTime = (30000 / portTICK_RATE_MS); 
         ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
-        //Block until connection is done or until timeout
-        //HTTP_request = false;
+
+
 
         if( ulNotificationValue == 1 ) {     
             ESP_LOGI(TAG,"Got connection status");
@@ -396,13 +392,11 @@ static esp_err_t connect_handler(httpd_req_t *req)
 
         ESP_LOGI(TAG, "Waiting for task notification");    
            
-        xMaxBlockTime = (30000 / portTICK_RATE_MS);//pdMS_TO_TICKS ( 200000 ) ;
+        xMaxBlockTime = (30000 / portTICK_RATE_MS);
 
         //Block until connection is done or until timeout
         ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
         
-        //HTTP_request = false;
-
         if( ulNotificationValue == 1 ) {
             ESP_LOGI(TAG,"Got connection status");
 
@@ -508,7 +502,7 @@ static esp_err_t upgrade_resp_html(httpd_req_t *req) //const char *dirpath
     extern const unsigned char upgrade_end[] asm("_binary_upgrade_html_end");
     const size_t upgrade_size = (upgrade_end - upgrade_start);
 
-    /* Add file upload form and script which on execution sends a POST request to /upload */
+   /* Send the rest of the html code*/
 
     httpd_resp_send_chunk(req, (const char *)upgrade_start, upgrade_size);
 
@@ -587,7 +581,7 @@ static esp_err_t http_resp_dir_html(httpd_req_t *req, const char *dirpath)
     char dirpath_mod[dirpath_len + 1];
     strlcpy(dirpath_mod, dirpath, dirpath_len); //remove trailing '/' from dirpath.
 
-    uint32_t free_kb, tot_kb;
+    uint32_t free_kb = 0, tot_kb = 0;
 
     DIR *dir;
     dir = opendir(dirpath_mod);
@@ -1373,7 +1367,6 @@ static esp_err_t delete_files_handler(httpd_req_t *req)
                 }
                 if (S_ISDIR(file_stat.st_mode))
                 {
-                    printf("%s is a directory!\n", filepath);
                     if (rmdir(filepath) == 0)
                     {
                         ESP_LOGI(TAG, "Deleted directory : %s", filepath);
@@ -1383,7 +1376,8 @@ static esp_err_t delete_files_handler(httpd_req_t *req)
                     else
                     {
                         ESP_LOGI(TAG, "Directory not empty, triggering remove_dir function : %s", filepath);
-                        //
+                        // This is a custom function wich will loop trough all folder and sub-folders and delete files and folders one by one.
+                        // This can potentyally take a long time if the folder you want to delete contains 1000s of files and sub-folder.
                         if (remove_directory(filepath) == 0)
                         {
                             ESP_LOGI(TAG, "Directory deleted: %s", filepath);
@@ -1523,52 +1517,24 @@ esp_err_t OTA_update_status_handler(httpd_req_t *req)
 static esp_err_t validate_image_header(esp_app_desc_t *new_app_info, esp_app_desc_t *running_app_info)
 {
     if (new_app_info == NULL) {
+        strcpy(flash_error, "Invalid image header");
         return ESP_ERR_INVALID_ARG;
     }
 
     ESP_LOGI(TAG, "Running firmware version: %s", running_app_info->version);
 
-
-#ifdef CONFIG_EXAMPLE_SKIP_VERSION_CHECK
-    if (memcmp(new_app_info->version, running_app_info->version, sizeof(new_app_info->version)) == 0) {
-        ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
-        strcpy(flash_error, "Current running version is the same as a new");
-        return ESP_FAIL;
-    }
-#endif
-
+    // the bin file to be flashed should contain a magic word in the file header. This should be 0xABCD5432 and is contained in ESP_APP_DESC_MAGIC_WORD
     if (new_app_info->magic_word != ESP_APP_DESC_MAGIC_WORD)
     {
         ESP_LOGW(TAG, "Invalid magic word (expected [ 0x%x ], received [0x%x ]", ESP_APP_DESC_MAGIC_WORD, new_app_info->magic_word);
         strcpy(flash_error, "Invalid magic word (expected: 0xABCD5432)");
         return ESP_FAIL;
     }
-/*
-    const esp_partition_t *last_invalid_app = esp_ota_get_last_invalid_partition();
-    esp_app_desc_t invalid_app_info;
-    if (esp_ota_get_partition_description(last_invalid_app, &invalid_app_info) == ESP_OK)
-    {
-        ESP_LOGI(TAG, "Last invalid firmware version: %s", invalid_app_info.version);
-    }
 
-    // check current version with last invalid partition
-    if (last_invalid_app != NULL)
-    {
-        if (memcmp(invalid_app_info.version, new_app_info->version, sizeof(new_app_info->version)) == 0)
-        {
-            ESP_LOGW(TAG, "New version is the same as invalid version.");
-            ESP_LOGW(TAG, "Previously, there was an attempt to launch the firmware with %s version, but it failed.", invalid_app_info.version);
-            ESP_LOGW(TAG, "The firmware has been rolled back to the previous version.");
-            strcpy(flash_error, "New version is the same as invalid version.");
-
-            return ESP_FAIL;
-        }
-    }
-*/
     return ESP_OK;
 }
 
-/* Fuunction to update firmware */
+/* Function to update firmware */
 esp_err_t OTA_update_post_handler(httpd_req_t *req)
 {
     esp_ota_handle_t ota_handle;
@@ -1618,13 +1584,7 @@ esp_err_t OTA_update_post_handler(httpd_req_t *req)
         {
             is_req_body_started = true;
 
-            // Lets find out where the actual data start after the header info
-            /*char *body_start_p = strstr(ota_buff, "\r\n\r\n") + 4;
-            int body_part_len = recv_len - (body_start_p - ota_buff);
-            int body_part_sta = recv_len - body_part_len;
-            printf("OTA File Size: %d : Start Location:%d - End Location:%d\r\n", content_length, body_part_sta, body_part_len);
-            printf("OTA File Size: %d\r\n", content_length);
-*/
+
             esp_app_desc_t new_app_info;
             esp_app_desc_t running_app_info;
 
@@ -1669,14 +1629,14 @@ esp_err_t OTA_update_post_handler(httpd_req_t *req)
                 {
                     esp_ota_abort(ota_handle);
                     ESP_LOGE(TAG, "Error, OTA image is invalid");
-                    strcpy(flash_error, "OTA image is invalid");
+                    strcpy(flash_error, "Image is invalid");
                     httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Error flashing new firmware");
                     return ESP_FAIL;
                 }                
             }
             else
             {
-                ESP_LOGE(TAG, "received package is too short, increase package size!");
+                ESP_LOGE(TAG, "received package is too short, increase buffer size!");
                 strcpy(flash_error, "Invalid image file");
                 esp_ota_abort(ota_handle);
                 httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Invalid image file");
@@ -1801,7 +1761,15 @@ static esp_err_t http_server_post_handler(httpd_req_t *req)
     
     const char *needle = "/";
     char *start, *end;
-    char uri[64];
+    int uri_len = strlen(req->uri);
+    
+    if (uri_len > CONFIG_HTTPD_MAX_URI_LEN) {
+
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Uri lenght is too long !");
+        return ESP_FAIL;
+    }
+
+    char uri[uri_len];
     int len = 0;
 
     start = strstr(req->uri, needle);
@@ -1838,7 +1806,7 @@ static esp_err_t http_server_post_handler(httpd_req_t *req)
     {
         return connect_handler(req);
     }
-    else if(strcmp(uri, "/partition") == 0) // Handler for conncting to a network
+    else if(strcmp(uri, "/partition") == 0) // Handler for formating the sd card
     {
         return format_handler(req);
     }
@@ -1891,7 +1859,7 @@ esp_err_t start_file_server(const char *base_path)
     config.backlog_conn = 4;
     
     
-    // Lets bump up the stack size (default was 4096)
+    // Lets bump up the stack size (default is 4096)
     config.stack_size = 1024*6;
 
     /* Use the URI wildcard matching function in order to

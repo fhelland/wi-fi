@@ -400,7 +400,7 @@ void SPI_task (void *arg)
             }
 
         } else {
-            // if spi_slave_get_trans_result times out, close open file. If a file is open, it can not be downloaded in the web interface.
+            // if spi_slave_get_trans_result times out, close open file. Open file is not allowed to be downloaded through the web interface.
             if (file != NULL) {
                 fclose(file);
                 file = NULL;
