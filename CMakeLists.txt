@@ -4,4 +4,4 @@ cmake_minimum_required(VERSION 3.5)
 set(EXCLUDE_COMPONENTS "coap" "asio")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(LRP_wifi)
+project(wifi)

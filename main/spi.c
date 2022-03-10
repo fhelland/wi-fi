@@ -21,7 +21,7 @@
 #include "sdmmc.h"
 #include "file_server.h"
 #include "spi.h"
-
+#include "wifi_manager.h"
 
 
 
@@ -55,20 +55,21 @@ void init_esp32_spi_slave()
         .sclk_io_num=GPIO_SCLK,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = MAX(4092, SPI_PKT_SIZE),
+        .max_transfer_sz = MAX(4092, SPI_PKT_SIZE),     // Default size is 4092. Needs to be increased when using longers SPI messages than 4092.
         .flags = 0,
     };
 
+
     //Configuration for the SPI slave interface
     spi_slave_interface_config_t slvcfg={
-        .mode=1,                      /**< SPI mode, representing a pair of (CPOL, CPHA) configuration:
+        .mode=1,        /**< SPI mode, representing a pair of (CPOL, CPHA) configuration:
                                          - 0: (0, 0)
                                          - 1: (0, 1)
                                          - 2: (1, 0)
                                          - 3: (1, 1)
-                                     */
+                        */
         .spics_io_num=GPIO_CS,
-        .queue_size=6,
+        .queue_size=MAX_SPI_MESSAGES,
         .flags = ESP_INTR_FLAG_IRAM, //SPI_SLAVE_RXBIT_LSBFIRST,
         .post_setup_cb=my_post_setup_cb,
         .post_trans_cb=my_post_trans_cb
@@ -98,14 +99,13 @@ void SPI_task (void *arg)
 {
     char path[FILE_PATH_MAX] = {0};         //file path
     FILE* file = NULL;                      //FILE pointer
-    eControl msgCode = 0;                       //SPI Message code
-    //struct timeval begin, end, w_begin, w_end;
+    eControl msgCode = 0;                   //SPI Message code
 
     uint16_t spi_trans_len = 0;
     const size_t sd_mount_len = sizeof(BASE_PATH) - 1;         //Length of sd card base folder
     int spi_id = 0;
     
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+    //esp_log_level_set(TAG, ESP_LOG_INFO);
 
     esp_err_t ret;
     
@@ -142,7 +142,6 @@ void SPI_task (void *arg)
         if (ret == ESP_OK) 
         {
             SET_BIT(spiQueueBit, k);            //Set SPI message queue bit
-            //printf("SPI message %i queued   -   spiBIT: %X, Messages queued: %i    |   UserId = %i \n", k, spiQueueBit, get_spi_queue_size(RCV_HOST), ((int)spi_trans[k].user));
         } else 
         {
             printf("ERROR: SPI message %i not queued ! \n", k);
@@ -354,19 +353,18 @@ void SPI_task (void *arg)
                 case SLEEP:
 
                         ESP_LOGI(TAG, "Enter deep sleep");
+
                         // Need to stop wifi before going to sleep
-                        esp_wifi_stop();
-                        esp_wifi_deinit();
-                        
+                        if (wifi_manager_get_esp_netif_ap() != NULL) {
+                            esp_wifi_stop();
+                            esp_wifi_deinit();
+                        }
 
-                        #if CONFIG_IDF_TARGET_ESP32
-                            // Isolate GPIO12 pin from external circuits. This is needed for modules
-                            // which have an external pull-up resistor on GPIO12 (such as ESP32-WROVER)
-                            // to minimize current consumption.
+                        // Isolate GPIO12 pin from external circuits. This is needed for modules
+                        // which have an external pull-up resistor on GPIO12 (such as ESP32-WROVER)
+                        // to minimize current consumption.
+                        rtc_gpio_isolate(GPIO_NUM_12);
 
-                            rtc_gpio_isolate(GPIO_NUM_12);
-
-                        #endif
                         //esp_sleep_pd_config(ESP_PD_DOMAIN_MAX, ESP_PD_OPTION_OFF);
                         esp_deep_sleep_start();
 
@@ -402,10 +400,11 @@ void SPI_task (void *arg)
             }
 
         } else {
+            // if spi_slave_get_trans_result times out, close open file. If a file is open, it can not be downloaded in the web interface.
             if (file != NULL) {
                 fclose(file);
                 file = NULL;
-                printf("file closed\n");
+                ESP_LOGI(TAG, "file closed: %s\n", path);
             }
         }   
     } while (1);
@@ -421,6 +420,3 @@ void SPI_task (void *arg)
 
     vTaskDelete(NULL);
 }
-
-
-

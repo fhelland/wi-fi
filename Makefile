@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := LRP_wifi
+PROJECT_NAME := wifi
 
 include $(IDF_PATH)/make/project.mk
 

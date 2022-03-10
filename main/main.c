@@ -13,7 +13,6 @@
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "mdns.h"
-//#include "esp_sntp.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include <sys/param.h>
@@ -22,7 +21,6 @@
 #include "esp_wifi.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
-//#include "soc/sens_periph.h"
 #include "soc/rtc_periph.h"
 
 // custom include files:
@@ -36,18 +34,20 @@ static const char *TAG = "MAIN";
 
 /* These pins will wake the module up from sleep */
 
-#define WAKEUP1     (34)           /* Wake up and turn on Wi-Fi                      */
-#define WAKEUP2     (35)           /* Wake up and only run Receive SPI messages      */
+#define WAKEUP1                 (34)           /* Wake up and turn on Wi-Fi                      */
+#define WAKEUP2                 (35)           /* Wake up and only run Receive SPI messages      */
 
 // Deep sleep pin :
-#define SLEEP_PIN 0
-#define ESP_INTR_FLAG_DEFAULT 0 
+#define SLEEP_PIN               (35)         // Pin that will trigger sleep. Use pin 0 for testing with boot button on dev board.
+#define ESP_INTR_FLAG_DEFAULT   (0)
 TaskHandle_t ISR = NULL;
 
 // interrupt service routine for sleep pin
 void IRAM_ATTR sleep_isr_handler(void* arg) {
-    xTaskResumeFromISR(ISR);
-    portYIELD_FROM_ISR(  );
+    BaseType_t xYieldRequired;
+    xYieldRequired = xTaskResumeFromISR( ISR );
+    // We should switch context so the ISR returns to a different task.
+    portYIELD_FROM_ISR( xYieldRequired  );
 }
 
 // task that will send device to sleep on pin interrupt ////////////
@@ -67,8 +67,9 @@ void sleep_task(void *arg)
 
     ///////////////////////////////////////////////////////////////////
 
-    //while(1){  
-        vTaskSuspend(ISR);
+         // The task suspends itself.
+         vTaskSuspend( NULL );
+         // The task is now suspended, so will not reach here until the ISR resumes it.
 
         printf("Detected interrup on sleep pin, going to sleep now !\n");
 
@@ -81,7 +82,7 @@ void sleep_task(void *arg)
         rtc_gpio_isolate(GPIO_NUM_12);
 
         esp_deep_sleep_start();
-    //}
+
     vTaskDelete(NULL);
 }
 
@@ -149,12 +150,6 @@ void app_main(void)
                           esp_err_to_name(ret));
         }
     }
-    gpio_pad_select_gpio(GPIO_NUM_21);
-    gpio_set_direction(GPIO_NUM_21, GPIO_MODE_INPUT );
-    if (gpio_get_level(GPIO_NUM_21) == 1) {
-        printf("GPIO 21 is HIGH\n");
-    } else printf("GPIO 21 is LOW\n");
-
 
     //xTaskCreate(update_time, "Update_time", 1024*2, NULL, 15, NULL); 
      
@@ -171,12 +166,6 @@ void app_main(void)
       ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
-/*
-    gpio_pad_select_gpio(WAKEUP1);  
-    // set the correct direction
-    gpio_set_direction(WAKEUP1, GPIO_MODE_INPUT);
-*/
 
     // if true, enable http file server, uart-tcp server and wi-fi manager
     bool wifi_wakeup = false;
@@ -227,13 +216,17 @@ void app_main(void)
     
     if (wifi_wakeup == true) {
         
+        // Attempt to get node description by sending "get node description" command over uart
+        // it will save the name to nvs partition. This name will be used for SSID name for access point and mDNS host-name.
+        // Maximum allowed charachters in a SSID name is 32.
+        // DNS names can contain only alphabetical characters (A-Z), numeric characters (0-9), the minus sign (-), and the period (.)
         char * nodeDescription = (char * )malloc(MAX_SSID_SIZE + 1); 
 
         if (get_node_description(nodeDescription, 1) == 1 ) {
             char ssid[MAX_SSID_SIZE + 1]; // 
             read_from_nvs(ssid);
             if (strcmp(nodeDescription, ssid) == 0) {
-                printf("Node description already saved to NVS\n");
+                ESP_LOGI(TAG, "Node description already saved to NVS\n");
             } else { 
                 write_to_nvs(nodeDescription);                    
                 ESP_LOGI(TAG, "Node description written to NVS: %s", ssid); 

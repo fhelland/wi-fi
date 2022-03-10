@@ -8,4 +8,4 @@ The IP-adress of the device is 10.10.0.1 by default. This can be changed in menu
 
 Enter the ip adress in a browser to get to the user interface. 
 
-mDNS is enabled to be able to reach the device by hostname instead of entering ip-adress. This is useful if the device is connected to another network and IP-adress is unknown. Enter hostname.local to get to the device. Default hostname is esp32. This can be changed in wifi_manager.h. The wi-fi module will try and get node description from uart during boot. This will be used to create a hostname and wi-fi ssid. The name is visilbe on the wi-fi page of the user interface.
+mDNS is enabled to be able to reach the device by hostname instead of entering ip-adress. This is useful if the device is connected to another network and IP-adress is unknown. Enter hostname.local to get to the device. Default hostname is esp32. This can be changed in wifi_manager.h. The wi-fi module will try and get node description from uart during boot. This will be used to create a hostname and wi-fi ssid. The name is visible on the wi-fi page of the web interface.

@@ -330,18 +330,18 @@ uint8_t get_clock(size_t n_times)
         rxBytes = uart_read_bytes(EX_UART_NUM, buf, 128, 20 / portTICK_PERIOD_MS);
         if (rxBytes > 0) {
             buf[rxBytes] = '\0'; //Null-terminate
-            //printf("Received: %s\n", buf);
-            if (strncmp(buf, "#", 1) == 0){
+            
+            // check that the first character is a '#'
+            if (strncmp(buf, "#", 1) == 0) {
                 // clock received
                 status = 1;
             } else {
+                // in case we received something unexpected, wait until uart is free.
                 error++;
                 printf("UART busy, waiting...\n");
                 while (uart_read_bytes(EX_UART_NUM, buf, 128, 20 / portTICK_PERIOD_MS) > 0) {
                     
                 }
-                //uart_flush_input(EX_UART_NUM); 
-                //vTaskDelay (500 / portTICK_PERIOD_MS );
             }
 
         } else {
@@ -352,7 +352,7 @@ uint8_t get_clock(size_t n_times)
         }
 
         if (error > n_times) {
-            ESP_LOGI(TAG, "Too many errors...");
+            ESP_LOGW(TAG, "Too many errors, aborting update clock");
             status = 0;
             return status;
         }
@@ -361,22 +361,19 @@ uint8_t get_clock(size_t n_times)
     
     //strip out date from received message:
     
-    ptr = strrchr(buf, '#'); //Find last occurence of #
+    ptr = strrchr(buf, '#'); //Find last occurence of # and replace it with a NULL byte
     if (ptr != NULL) {
         buf[(int)(ptr - buf - 1)] = '\0';
     }
     
     ptr = strchr(buf, '#'); //Find first occurence of #
     if (ptr != NULL) {
-        //printf("Received: %s\n", ptr+2);
-        if (strptime(ptr+2, "%Y.%m.%d %H:%M:%S", &tm) != NULL) {
         
+        if (strptime(ptr+2, "%Y.%m.%d %H:%M:%S", &tm) != NULL) {    // Need to add 2 to bypass # and end-of-line characters
             time_t t = mktime(&tm);
-
-            printf("Setting time: %s\n", asctime(&tm));
-
+            ESP_LOGI(TAG, "Setting time: %s\n", asctime(&tm));
             struct timeval now = { .tv_sec = t};
-
+            // This will update system time on wi-fi module.
             settimeofday(&now, NULL);
         }
     } else {
@@ -404,7 +401,7 @@ uint8_t get_node_description(char * out_string, size_t max_tries)
 
     do {
         uart_write_bytes(EX_UART_NUM, cmd, strlen(cmd));
-        rxBytes = uart_read_bytes(EX_UART_NUM, buf, 128, 100 / portTICK_PERIOD_MS);
+        rxBytes = uart_read_bytes(EX_UART_NUM, buf, 128, 20 / portTICK_PERIOD_MS);
         
         if (rxBytes > 0) {
             buf[rxBytes] = 0; // Null terminate.
@@ -436,12 +433,13 @@ uint8_t get_node_description(char * out_string, size_t max_tries)
     int product, serial;
 
     /* extract product no, serial no and name from received string. */
-    sscanf(pch, "%*s %*s %d %d %n", &product, &serial, &iCharsConsumed); //%32[a-zA-Z ]
+    sscanf(pch, "%*s %*s %d %d %n", &product, &serial, &iCharsConsumed); //%32[0-9a-zA-Z-.]
     end = strcspn (pch,"\n");
     len = end - iCharsConsumed;
 
     strlcpy(out_string, pch + iCharsConsumed, len - 1);
 
+    // Replace som characters to comply with dns name standard (for mDNS hostname)
     replacechar(out_string, ' ', '-');
     replacechar(out_string, '#', '0');
 

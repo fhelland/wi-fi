@@ -504,11 +504,11 @@ bool wifi_manager_fetch_wifi_sta_config()
 		//ESP_LOGI(TAG, "Size of enterprise settings: %i", sz);
 		esp_err = nvs_get_blob(handle, "wpa_enterprise", &tmp_wpa_e_settings, &sz);
 		if(esp_err != ESP_OK){
-			ESP_LOGE(TAG, "Failed to read enterprise settings from NVS");
+			ESP_LOGI(TAG, "No enterprise settings saved to NVS");
 		} else {
 			//memcpy(wpa_enterprise_settings, buff, sz);
-			strcpy((char*)wpa_enterprise_settings->user, (char*)tmp_wpa_e_settings.user);
-			strcpy((char*)wpa_enterprise_settings->password, (char*)tmp_wpa_e_settings.password);
+			memcpy(wpa_enterprise_settings->user, tmp_wpa_e_settings.user, tmp_wpa_e_settings.user_len);
+			memcpy(wpa_enterprise_settings->password, tmp_wpa_e_settings.password, tmp_wpa_e_settings.user_len);
 			wpa_enterprise_settings->user_len = tmp_wpa_e_settings.user_len;
 			wpa_enterprise_settings->password_len = tmp_wpa_e_settings.password_len;
 			//ESP_LOGI(TAG, "Size of enterprise settings: %i", sz);
@@ -1254,7 +1254,7 @@ void wifi_manager( void * pvParameters ){
 					// If this is a wpa enterprise connection, we enable wpa enterprise here:
 					if (wpa_enterprise_settings->user_len > 0 ) {
 
-						printf("wpa enterprise detected with user: %s and password: ************\n", wpa_enterprise_settings->user);
+						ESP_LOGI(TAG, "wpa enterprise detected with user: %s and password: ************\n", wpa_enterprise_settings->user);
 						ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_username(wpa_enterprise_settings->user, wpa_enterprise_settings->user_len) );
     					ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_password(wpa_enterprise_settings->password, wpa_enterprise_settings->password_len) );
     					ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable() );
@@ -1268,7 +1268,6 @@ void wifi_manager( void * pvParameters ){
 					}
 
 					ESP_ERROR_CHECK(esp_wifi_connect());
-
 
 
 				} else {
@@ -1359,7 +1358,7 @@ void wifi_manager( void * pvParameters ){
 					/* In case there is a wrong password, this will cause a slight delay before the user can try again, but not too much. */
 					if (retry_failed_attempt < 1) {			
 						xTimerStart( wifi_manager_retry_timer, (TickType_t)0 );
-						printf("Failed to connect to SSID: %i\n", retries);
+						ESP_LOGW(TAG, "Failed to connect to SSID");
 						retry_failed_attempt++;
 						
 					} else  {
@@ -1431,7 +1430,6 @@ void wifi_manager( void * pvParameters ){
 					/* Start the timer that will try to restore the saved config */
 					if (retries < WIFI_MANAGER_MAX_RETRY_START_AP) {
 						xTimerStart( wifi_manager_retry_timer, (TickType_t)0 );
-						printf("Retrycounter: %i\n", retries);
 						retries++;
 						
 					} else retries = 0;			//Re-set the re-try counter to 0
