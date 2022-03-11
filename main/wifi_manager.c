@@ -163,8 +163,8 @@ void wifi_sleep_timer_cb( TimerHandle_t xTimer)
 	esp_wifi_deinit();
 
     // Isolate GPIO pin from external circuits. This is needed for modules
-    // which have an external pull-up resistors 
-    // to minimize current consumption.
+    // which have an external pull-up resistors on GPIO12
+    // to minimize current consumption in sleep mode.
     rtc_gpio_isolate(GPIO_NUM_12);
 
     //esp_sleep_pd_config(ESP_PD_DOMAIN_MAX, ESP_PD_OPTION_OFF);
@@ -236,10 +236,10 @@ void wifi_toggle_sleep_timer() {
 				ESP_LOGI(TAG, "Sleep timer stopped");
 			}
 		}
-		vTaskDelay(10000/portTICK_PERIOD_MS);
+		vTaskDelay(10000/portTICK_PERIOD_MS);		// Wait here for  specified time in mS
 	}
 
-	printf("End of sleep timer task, should not be reached\n");
+	// This should not be reached
 	vTaskDelete(NULL);
 
 }
