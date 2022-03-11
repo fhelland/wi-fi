@@ -75,7 +75,7 @@ extern "C" {
 #define WIFI_MANAGER_RETRY_TIMER			CONFIG_WIFI_MANAGER_RETRY_TIMER
 
 /**
- * @brief Defines the allowed idle time before entinger deep sleep.
+ * @brief Defines the time before entingeentering deep sleep.
  * Value in ms.
  */
 #define SLEEP_TIMER     (5 * 60 * 1000)
