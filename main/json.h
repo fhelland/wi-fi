@@ -39,7 +39,7 @@ extern "C" {
  * @see cJSON equivlaent static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffer * const output_buffer)
  */
 bool json_print_string(const unsigned char *input, unsigned char *output_buffer);
-static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffer * const output_buffer)
+
 #ifdef __cplusplus
 }
 #endif

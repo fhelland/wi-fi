@@ -612,10 +612,12 @@ static esp_err_t http_resp_dir_html(httpd_req_t *req, const char *dirpath)
                                   "<a style=\"padding-right: 10px;\" href=\"");
     httpd_resp_sendstr_chunk(req, req->uri);
 
-    //httpd_resp_sendstr_chunk(req, "../\"><img src=\"/back.png\" width=\"16\" height=\"16\"> Back</a>"
-      //                            "<a href=\"/\"/><img src=\"/home.png\" width=\"16\" height=\"16\"> Home</a>");
-    httpd_resp_sendstr_chunk(req, "../\">&#x2190 Back</a>"
-                                  "<a href=\"/\"/>&#x2302 Home</a>");
+    httpd_resp_sendstr_chunk(req, "../\"><img src=\"/back.png\" width=\"16\" height=\"16\"> Back</a>"
+                                  "<a href=\"/\"/><img src=\"/home.png\" width=\"16\" height=\"16\"> Home</a>");
+    
+    // Home UTF-8 icon.
+    //httpd_resp_sendstr_chunk(req, "../\">&#x2190 Back</a>"
+    //                              "<a href=\"/\"/>&#x2302 Home</a>");
 
 
     /* This will create a clickable current folder link*/
