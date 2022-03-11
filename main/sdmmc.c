@@ -158,7 +158,7 @@ esp_err_t mount_sd_card(bool format_if_fail) {
             goto fail;
         }
     }
-    //sdmmc_card_print_info(stdout, card);
+    sdmmc_card_print_info(stdout, card);
 
     return ESP_OK;
 cleanup:
@@ -184,44 +184,6 @@ fail:
     card = NULL;
     base_path = NULL;
     return err;
-}
-
-
-/* Return info about total space and free space on mounted SD card */ 
-uint8_t get_freespace_sd(uint32_t *tot, uint32_t *free) {
-
-    FATFS *fs;
-    DWORD fre_clust, fre_sect, tot_sect;
-    uint8_t status = 0;
-    
-    if (!card) return status;
-
-
-    BYTE pdrv = ff_diskio_get_pdrv_card(card);
-    if (pdrv == 0xff) {
-        return status;
-    }
-
-    char drv[3] = {(char)('0' + pdrv), ':', 0};
-
-    /* Get volume information and free clusters of drive drv  */
-    if(f_getfree(drv, &fre_clust, &fs) == FR_OK) {
-        /* Get total sectors and free sectors */
-        tot_sect = (fs->n_fatent - 2) * fs->csize;
-        fre_sect = fre_clust * fs->csize;
-
-        /* free space (assuming 512 bytes/sector) */
-	    *tot = tot_sect / 2;
-	    *free = fre_sect / 2;
-        status = 1;
-        return status;
-
-    } else{
-        tot = 0;
-        free = 0;
-        return status;
-    }
-
 }
 
 
@@ -269,8 +231,11 @@ esp_err_t format_sd_card(void) {
     
     esp_err_t err;
     const char mount_point[] = SD_MOUNT;
+    
+    // get the current drive number
     BYTE pdrv = ff_diskio_get_pdrv_card(card);
     if (pdrv == 0xff) {
+        // exit if no sd-card is found
         return ESP_ERR_INVALID_ARG;
     }
     if (card == NULL) 
@@ -278,6 +243,7 @@ esp_err_t format_sd_card(void) {
         return ESP_FAIL;
     }
 
+    // correct format for drive number.
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -312,8 +278,43 @@ fail:
     return err;
 }
 
+/* Get total space and free space on mounted SD card */ 
+uint8_t get_freespace_sd(uint32_t *tot, uint32_t *free) {
 
-/* Get info about mounted SD card. Will return Name and frequency*/
+    FATFS *fs;
+    DWORD fre_clust, fre_sect, tot_sect;
+    uint8_t status = 0;
+    
+    if (!card) return status;
+
+    BYTE pdrv = ff_diskio_get_pdrv_card(card);
+    if (pdrv == 0xff) {
+        return status;
+    }
+
+    char drv[3] = {(char)('0' + pdrv), ':', 0};
+
+    /* Get volume information and free clusters of drive drv  */
+    if(f_getfree(drv, &fre_clust, &fs) == FR_OK) {
+        /* Get total sectors and free sectors */
+        tot_sect = (fs->n_fatent - 2) * fs->csize;
+        fre_sect = fre_clust * fs->csize;
+
+        /* free space (assuming 512 bytes/sector) */
+	    *tot = tot_sect / 2;
+	    *free = fre_sect / 2;
+        status = 1;
+        return status;
+
+    } else{
+        tot = 0;
+        free = 0;
+        return status;
+    }
+
+}
+
+/* Get info from a mounted SD card. Will return Name and frequency*/
 uint8_t get_sdcard_info(char* name, uint16_t* freq_khz) {
     
     uint8_t status = 0;

@@ -54,7 +54,8 @@
 			"typeinfo": "c",
 			"sdmmc.h": "c",
 			"esp_sleep.h": "c",
-			"wifi_manager.h": "c"
+			"wifi_manager.h": "c",
+			"complex": "c"
 		}
 	}
 }

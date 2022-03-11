@@ -25,7 +25,7 @@ static const int UART_RX_BUF_SIZE = 6*1024;
 /*/////////////////////////////////////////////////////////
  *
  *          TASK for receiving data on UART 
- *          and transmitting incomming data to a TCP socet
+ *          and transmitting incomming data to a TCP socket
  *
  */
 void rx_task(void *arg);

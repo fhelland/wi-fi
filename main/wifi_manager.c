@@ -249,7 +249,7 @@ void wifi_manager_start(){
 	/* disable the default wifi logging */
 	esp_log_level_set("wifi", ESP_LOG_NONE);
 	esp_log_level_set(TAG, ESP_LOG_INFO);
-	/* initialize flash memory */
+	/* nvs memory should already be initilasized in main.c file. */
 	//nvs_flash_init();
 	ESP_ERROR_CHECK(nvs_sync_create()); /* semaphore for thread synchronization on NVS memory */
 

@@ -26,7 +26,7 @@ extern "C" {
 
 /* SPI_BLOCK_SIZE: Maximum number of bytes in a SPI message. This needs to set same on the Master   * 
  * This value needs to be a multiple of 4 and buffer needs to be Word alligned.                     *
- * This should be set up as a factor of 1024 for most efficent writes to SD-card.                   *
+ * This should be set up as a factor of 512 for most efficent writes to SD-card.                   *
  *                
  */
 #define SPI_HEADER_SIZE     4
@@ -38,16 +38,17 @@ extern "C" {
 
 
 /* Size of SPI message buffer 
- * Allocated memmory: MAX_SPI_MESSAGES * SPI_BLOCK_SIZE
+ * Allocated memmory: MAX_SPI_MESSAGES * SPI_PKT_SIZE
  */
 #define MAX_SPI_MESSAGES    4     
 
 /* PACKAGE FORMAT :
 
-|    Byte 1     |    Byte 2     |    Byte 3     |     Byte 4    |     Byte 4 - BLOCKSIZE    | 
-|  Command byte |  Length MSB   |  Length LSB   |      Not used |           Body            |   
+|    Byte 1     |    Byte 2     |    Byte 3     |     Byte 4    |     Byte 5 - BLOCKSIZE+HEADER     | 
+|  Command byte |  Length MSB   |  Length LSB   |      Not used |           Body                    |   
 
 */
+
 typedef enum eControl { 
     OPEN_FILE = 0x01, 
     CLOSE_FILE = 0x02, 

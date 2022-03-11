@@ -228,7 +228,7 @@ CLEAN_UP:
 
 }
 
-void start_tcp_server_task(void) 
+void   start_tcp_server_task(void) 
 {
 
 #ifdef CONFIG_TCP_SERVER_IPV4

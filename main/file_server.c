@@ -1,11 +1,9 @@
 /* HTTP File Server Example
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
 
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,7 +39,8 @@
 /* Larger buffer will mean, higher troughput. */
 #define SCRATCH_BUFSIZE (16 * 1024)
 
-/* Internal read and write buffers*/
+/* Internal read and write buffers size. Used when reading and writing files on fat partition. */
+/* By default this is 128 byte. This can increase troughput, especially the read buffer size is important for download speed */
 #define READ_BUF (4 * 1024)
 #define WRITE_BUF (4 * 1024)
 
@@ -68,7 +67,7 @@ struct file_server_data
 };
 
 // Receive message back from the wi-fi manager after connect/disconnect/scan.
-void xTask_connection_give()//( UBaseType_t uxIndexToNotify)
+void xTask_connection_give()
 {
     if ( xTaskToNotify != NULL ) {
         /* Notify the task that job is done */
@@ -244,7 +243,7 @@ static esp_err_t ap_list_handler(httpd_req_t *req)
             //Block until scan is done or until timeout
             ulNotificationValue = ulTaskNotifyTake( pdTRUE, xMaxBlockTime );
 
-            if (ulNotificationValue == 1) printf("Got message back from scan done event\n");
+            if (ulNotificationValue == 1) printf("Wi-FI scan done event\n");
             
             else printf("Scan event timeout\n");
 
@@ -296,7 +295,6 @@ static esp_err_t connect_handler(httpd_req_t *req)
 
     if (strcmp(ip, "0.0.0.0") != 0) {
         printf("Already connected to another network, triggering disconnect!!!\n");
-        //ESP_LOGI(TAG, "IP:"IPSTR, IP2STR(&ip_info.ip));
 
         xTaskNotifyStateClear(xTaskToNotify);
 
@@ -304,11 +302,8 @@ static esp_err_t connect_handler(httpd_req_t *req)
         
         // Block until disconnection is done or until timeout. Disconnect should be quick.
         xMaxBlockTime = 10000 / portTICK_RATE_MS;
-
         ulNotificationValue = ulTaskNotifyTake(  pdTRUE, xMaxBlockTime );
-        
-        if( ulNotificationValue == 1 ) printf("Disconnected all good\n");
-        else printf("Disconnection prosess timed out\n");
+
     }
     
     /* buffers for the headers */
@@ -1826,14 +1821,13 @@ static esp_err_t http_server_post_handler(httpd_req_t *req)
 /* Function to start the file server */
 esp_err_t start_file_server(const char *base_path)
 {
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+   
     static struct file_server_data *server_data = NULL;
 
     /* Validate file storage base path */
     if (!base_path || strcmp(base_path, "/sdcard") != 0)
     {
         ESP_LOGE(TAG, "File server presently supports only '/sdcard' as base path");
-        //return ESP_ERR_INVALID_ARG;
     }
 
     if (server_data)
@@ -1875,13 +1869,13 @@ esp_err_t start_file_server(const char *base_path)
     }
 
     /* URI handler for all GET commands */
-    httpd_uri_t file_download = {
+    httpd_uri_t http_server_get_request = {
         .uri = "/*", // Match all URIs of type /path/to/file
         .method = HTTP_GET,
         .handler = download_get_handler,
         .user_ctx = server_data // Pass server data as context
     };
-    httpd_register_uri_handler(server, &file_download);
+    httpd_register_uri_handler(server, &http_server_get_request);
 
     /* General URI handler for Post requests */
     httpd_uri_t http_server_post_request = {

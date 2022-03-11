@@ -25,7 +25,7 @@
 
 
 
-static const int maxMessages = MAX_SPI_MESSAGES;       //SPI message buffer size. Buffer size: maxMessages*SPI_BLOCK_SIZE
+static const int maxMessages = MAX_SPI_MESSAGES;       //SPI message buffer size. Buffer size: maxMessages*SPI_PKT_SIZE
 
 static uint8_t spiQueueBit;          // We set these bits high when we queue a message and low when we receive a message
 
@@ -126,10 +126,10 @@ void SPI_task (void *arg)
 
     // Prepare a set of SPI transactions 
     for (int k=0; k < maxMessages; k++) {
-        recvbuf[k] = (char*)malloc(SPI_BLOCK_SIZE);
+        recvbuf[k] = (char*)malloc(SPI_PKT_SIZE);
         spi_trans[k].user = malloc(sizeof(int));
 
-        memset(recvbuf[k], 0xee, SPI_BLOCK_SIZE);
+        memset(recvbuf[k], 0xee, SPI_PKT_SIZE);
         memset(&spi_trans[k], 0, sizeof(spi_trans[k]));
 
         spi_trans[k].length=SPI_PKT_SIZE*8;             // Lenght of transaction in bits
@@ -198,7 +198,8 @@ void SPI_task (void *arg)
                         /* Write received data to sd card */
                         int written = fwrite(spi_data, 1, MIN(SPI_BLOCK_SIZE, remaining), file);
                     
-                        //crc = esp_crc32_be( crc, (const uint8_t *)spi_data,  MIN(SPI_BLOCK_SIZE, remaining));
+                        // CRC is not used:
+                        // crc = esp_crc32_be( crc, (const uint8_t *)spi_data,  MIN(SPI_BLOCK_SIZE, remaining));
                         
                         remaining -= written;
 
@@ -207,7 +208,7 @@ void SPI_task (void *arg)
                             if ( ret_trans == &spi_trans[spi_id] && !(IS_BIT_SET(spiQueueBit, spi_id)) ) 
                             {
                                     // clear buffer
-                                    memset(recvbuf[spi_id], 0xee, SPI_BLOCK_SIZE);
+                                    memset(recvbuf[spi_id], 0xee, SPI_PKT_SIZE);
                                     // Queue up the last received spi transaction
                                     ret = spi_slave_queue_trans(RCV_HOST, &spi_trans[spi_id], 0);
                                     if (ret != ESP_OK) {
@@ -218,7 +219,7 @@ void SPI_task (void *arg)
                                         //set bit to indicate buffer has been queued successfully
                                         SET_BIT(spiQueueBit, spi_id);
                                         // clear buffer
-                                        memset(recvbuf[spi_id], 0xee, SPI_BLOCK_SIZE);
+                                        memset(recvbuf[spi_id], 0xee, SPI_PKT_SIZE);
                                     }
 
                             }
@@ -229,7 +230,7 @@ void SPI_task (void *arg)
                             
                             if (ret != ESP_OK) {
                                 printf("Could not receive message! No messages queued or received since last time!\n");
-                                goto ABORT;
+                                goto END;
                             } else {
                                 spi_id = ((int)ret_trans->user);
                             }
@@ -256,7 +257,7 @@ void SPI_task (void *arg)
                     replacechar(currentBuffer + SPI_HEADER_SIZE, '\\', '/');
 
                     // Check if file is already open and open file if need to
-                    
+                    // If the file is already open, we save a couple of milli seconds.
                     if (strncmp(path + sd_mount_len, spi_data, length) != 0 )
                     {
                         //printf(" Old path: %s   |   New path: %s\n", path + sd_mount_len + 1, spi_data);
@@ -275,7 +276,7 @@ void SPI_task (void *arg)
                         if (file == NULL) {
                             printf("Cannot open file %s\n", path);
                         } else {
-                            /* Increase internal write buffer from 128 bytes to whater blocksize we use. Needs to be run per file we open */
+                            /* Increase internal write buffer from 128 bytes to the blocksize we use. Needs to be run per file we open */
                             setvbuf(file, NULL, _IOFBF, SPI_BLOCK_SIZE);
                         }
                     } else if ((file == NULL) && (strlen(path) > 0)) {
@@ -310,7 +311,7 @@ void SPI_task (void *arg)
                     if ( (ret_trans == &spi_trans[spi_id]) && !(IS_BIT_SET(spiQueueBit, spi_id))) 
                     {
                         // reset memory
-                        memset(recvbuf[spi_id], 0xee, SPI_BLOCK_SIZE);
+                        memset(recvbuf[spi_id], 0xee, SPI_PKT_SIZE);
                         // Queue up SPI message as we are done with this buffer
                         ret = spi_slave_queue_trans(RCV_HOST, &spi_trans[spi_id], 0);
 
@@ -378,13 +379,13 @@ void SPI_task (void *arg)
                 
             }              
 
-            ABORT:
+            END:
             // check if any buffers needs to be queued.
             for (int k=0; k < maxMessages; k++) {            
                 if ( !(IS_BIT_SET(spiQueueBit, k))) 
                 {
-                    // reset buffer
-                    memset(recvbuf[k], 0xee, SPI_BLOCK_SIZE);
+                    // reset buffer to something sane
+                    memset(recvbuf[k], 0xee, SPI_PKT_SIZE);
                     // Queue up message
                     ret = spi_slave_queue_trans(RCV_HOST, &spi_trans[k], 0);
                             
